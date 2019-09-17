@@ -1,0 +1,24 @@
+[package]
+name = "domo"
+description = "Domo sdk and cli"
+documentation = "https://github.com/domoinc/domo-rust-sdk"
+homepage = "https://github.com/domoinc/domo-rust-sdk"
+repository = "https://github.com/domoinc/domo-rust-sdk"
+readme = "README.md"
+keywords = ["domo","sdk","cli","api"]
+categories = ["api-bindings", "command-line-utilities"]
+license-file = "LICENSE"
+maintenance = { status = "actively-developed" }
+version = "0.1.12"
+authors = ["Sean Murphy <sean.murphy@domo.com>"]
+edition = "2018"
+
+[dependencies]
+
+chrono = {version="0.4.9", features=["serde"]}
+csv="1.1.1"
+reqwest = "0.9.20"
+serde = {version="1.0.99", features=["derive"]}
+serde_json = "1.0.40"
+serde_yaml = "0.8.9"
+structopt = "0.3.0"
