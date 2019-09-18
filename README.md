@@ -6,7 +6,7 @@ We are happy to help integrate your rust code and processes into Domo.
 Welcome to the Rust Domo SDK.
 This project aims to help developers build great Rust solutions for Domo.
 
-This project contains a binary cli application in additon to a library.
+This project contains a binary cli application in addition to a library.
 
 Getting Started
 ===
