@@ -75,17 +75,17 @@ pub enum DataSetCommand {
     DeletePolicy { id: String, policy_id: u32 },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: DataSetCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: DataSetCommand) {
     match command {
         DataSetCommand::List { limit, offset } => {
-            let r = dc.get_datasets(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_datasets(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         DataSetCommand::ListAll {} => {
             let mut offset = 0_u32;
             let mut r: Vec<DataSet> = Vec::new();
             loop {
-                let mut ret = dc.get_datasets(Some(50), Some(offset)).unwrap();
+                let mut ret = dc.get_datasets(Some(50), Some(offset)).await.unwrap();
                 let mut b = false;
                 if ret.len() < 50 {
                     b = true;
@@ -97,61 +97,61 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: DataSetCommand) 
                     break;
                 }
             }
-            util::vec_obj_template_output(r, t);
+            util::vec_obj_template_output(r, template);
         }
         DataSetCommand::Create {} => {
             let r = DataSet::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_dataset(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_dataset(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         DataSetCommand::Retrieve { id } => {
-            let r = dc.get_dataset(&id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_dataset(&id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         DataSetCommand::Update { id } => {
-            let r = dc.get_dataset(&id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.put_dataset(&id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_dataset(&id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.put_dataset(&id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         DataSetCommand::Delete { id } => {
-            dc.delete_dataset(&id).unwrap();
+            dc.delete_dataset(&id).await.unwrap();
         }
         DataSetCommand::Import { file, id } => {
             let csv = fs::read_to_string(file).unwrap();
-            dc.put_dataset_data(&id, csv).unwrap();
+            dc.put_dataset_data(&id, csv).await.unwrap();
         }
         DataSetCommand::Export { id } => {
-            let r = dc.get_dataset_data(&id).unwrap();
-            util::csv_template_output(r, t);
+            let r = dc.get_dataset_data(&id).await.unwrap();
+            util::csv_template_output(r, template);
         }
         DataSetCommand::Query { id, sql } => {
-            let r = dc.post_dataset_query(&id, &sql).unwrap();
-            util::query_template_output(r, t);
+            let r = dc.post_dataset_query(&id, &sql).await.unwrap();
+            util::query_template_output(r, template);
         }
         DataSetCommand::ListPolicies { id } => {
-            let r = dc.get_dataset_policies(&id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_dataset_policies(&id).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         DataSetCommand::CreatePolicy { id } => {
             let r = Policy::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_dataset_policy(&id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_dataset_policy(&id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         DataSetCommand::RetrievePolicy { id, policy_id } => {
-            let r = dc.get_dataset_policy(&id, policy_id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_dataset_policy(&id, policy_id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         DataSetCommand::UpdatePolicy { id, policy_id } => {
-            let r = dc.get_dataset_policy(&id, policy_id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.put_dataset_policy(&id, policy_id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_dataset_policy(&id, policy_id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.put_dataset_policy(&id, policy_id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         DataSetCommand::DeletePolicy { id, policy_id } => {
-            dc.delete_dataset_policy(&id, policy_id).unwrap();
+            dc.delete_dataset_policy(&id, policy_id).await.unwrap();
         }
     }
 }

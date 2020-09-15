@@ -32,20 +32,20 @@ pub enum WebhookCommand {
     },
 }
 
-pub fn execute(e: &str, command: WebhookCommand) {
+pub async fn execute(editor: &str, command: WebhookCommand) {
     let c = Client::new();
     match command {
         WebhookCommand::CreateIntegrationMessage { url, token } => {
-            let t = util::edit_md(e, "Your message here").unwrap();
-            c.post_integration_message(&url, &token, &t).unwrap();
+            let t = util::edit_md(editor, "Your message here").unwrap();
+            c.post_integration_message(&url, &token, &t).await.unwrap();
         }
         WebhookCommand::CreateBuzzMessage { url, title } => {
-            let t = util::edit_md(e, "Your message here").unwrap();
+            let t = util::edit_md(editor, "Your message here").unwrap();
             let m = Message {
                 title: title,
                 text: t,
             };
-            c.post_buzz_message(&url, m).unwrap();
+            c.post_buzz_message(&url, m).await.unwrap();
         }
         WebhookCommand::CreateDatasetJson { url } => {
             let r = json!({
@@ -53,8 +53,8 @@ pub fn execute(e: &str, command: WebhookCommand) {
                 "b": 43,
                 "c": "Column C Value",
             });
-            let r = util::edit_obj(e, r, "").unwrap();
-            c.post_dataset_json(&url, r).unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            c.post_dataset_json(&url, r).await.unwrap();
         }
     }
 }

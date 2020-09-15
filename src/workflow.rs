@@ -147,74 +147,77 @@ pub enum WorkflowCommand {
     },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: WorkflowCommand) {
     match command {
         WorkflowCommand::List { limit, offset } => {
-            let r = dc.get_projects(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_projects(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         WorkflowCommand::Create {} => {
             let r = Project::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_project(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_project(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::Retrieve { project_id } => {
-            let r = dc.get_project(&project_id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_project(&project_id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::Update { project_id } => {
-            let r = dc.get_project(&project_id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.put_project(&project_id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_project(&project_id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.put_project(&project_id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::Delete { project_id } => {
-            dc.delete_project(&project_id).unwrap();
+            dc.delete_project(&project_id).await.unwrap();
         }
         WorkflowCommand::ListMembers { project_id } => {
-            let r = dc.get_project_members(&project_id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_project_members(&project_id).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         WorkflowCommand::ListLists { project_id } => {
-            let r = dc.get_project_lists(&project_id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_project_lists(&project_id).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         WorkflowCommand::CreateList { project_id } => {
             let r = List::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_project_list(&project_id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_project_list(&project_id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::RetrieveList {
             project_id,
             list_id,
         } => {
-            let r = dc.get_project_list(&project_id, &list_id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_project_list(&project_id, &list_id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::UpdateList {
             project_id,
             list_id,
         } => {
-            let r = dc.get_project_list(&project_id, &list_id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.put_project_list(&project_id, &list_id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_project_list(&project_id, &list_id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.put_project_list(&project_id, &list_id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::DeleteList {
             project_id,
             list_id,
         } => {
-            dc.delete_project_list(&project_id, &list_id).unwrap();
+            dc.delete_project_list(&project_id, &list_id).await.unwrap();
         }
         WorkflowCommand::ListTasks {
             project_id,
             limit,
             offset,
         } => {
-            let r = dc.get_project_tasks(&project_id, limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc
+                .get_project_tasks(&project_id, limit, offset)
+                .await
+                .unwrap();
+            util::vec_obj_template_output(r, template);
         }
         WorkflowCommand::ListListTasks {
             project_id,
@@ -224,17 +227,21 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
         } => {
             let r = dc
                 .get_project_list_tasks(&project_id, &list_id, limit, offset)
+                .await
                 .unwrap();
-            util::vec_obj_template_output(r, t);
+            util::vec_obj_template_output(r, template);
         }
         WorkflowCommand::CreateListTask {
             project_id,
             list_id,
         } => {
             let r = Task::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_project_list_task(&project_id, &list_id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc
+                .post_project_list_task(&project_id, &list_id, r)
+                .await
+                .unwrap();
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::RetrieveListTask {
             project_id,
@@ -243,8 +250,9 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
         } => {
             let r = dc
                 .get_project_list_task(&project_id, &list_id, &task_id)
+                .await
                 .unwrap();
-            util::obj_template_output(r, t);
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::UpdateListTask {
             project_id,
@@ -253,12 +261,14 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
         } => {
             let r = dc
                 .get_project_list_task(&project_id, &list_id, &task_id)
+                .await
                 .unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
             let r = dc
                 .put_project_list_task(&&project_id, &list_id, &task_id, r)
+                .await
                 .unwrap();
-            util::obj_template_output(r, t);
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::DeleteListTask {
             project_id,
@@ -266,6 +276,7 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
             task_id,
         } => {
             dc.delete_project_list_task(&project_id, &list_id, &task_id)
+                .await
                 .unwrap();
         }
         WorkflowCommand::ListListTaskAttachments {
@@ -275,8 +286,9 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
         } => {
             let r = dc
                 .get_project_list_task_attachments(&project_id, &list_id, &task_id)
+                .await
                 .unwrap();
-            util::vec_obj_template_output(r, t);
+            util::vec_obj_template_output(r, template);
         }
         WorkflowCommand::DownloadListTaskAttachment {
             project_id,
@@ -286,6 +298,7 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
         } => {
             let r = dc
                 .get_project_list_task_attachment(&project_id, &list_id, &task_id, &attachment_id)
+                .await
                 .unwrap();
             io::stdout().write_all(&r).unwrap();
         }
@@ -297,8 +310,9 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
         } => {
             let r = dc
                 .post_project_list_task_attachment(&project_id, &list_id, &task_id, file)
+                .await
                 .unwrap();
-            util::obj_template_output(r, t);
+            util::obj_template_output(r, template);
         }
         WorkflowCommand::DeleteListTaskAttachment {
             project_id,
@@ -307,6 +321,7 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: WorkflowCommand)
             attachment_id,
         } => {
             dc.delete_project_list_task_attachment(&project_id, &list_id, &task_id, &attachment_id)
+                .await
                 .unwrap();
         }
     }

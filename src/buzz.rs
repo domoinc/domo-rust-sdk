@@ -38,40 +38,41 @@ pub enum BuzzCommand {
     DeleteSubscription { id: String, subscription_id: String },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: BuzzCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: BuzzCommand) {
     match command {
         BuzzCommand::List {} => {
-            let r = dc.get_integrations().unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_integrations().await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         BuzzCommand::CreateIntegration {} => {
             let r = Integration::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_integration(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_integration(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         BuzzCommand::Retrieve { id } => {
-            let r = dc.get_integration(&id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_integration(&id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         BuzzCommand::Delete { id } => {
-            dc.delete_integration(&id).unwrap();
+            dc.delete_integration(&id).await.unwrap();
         }
         BuzzCommand::ListSubscriptions { id } => {
-            let r = dc.get_integration_subscriptions(&id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_integration_subscriptions(&id).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         BuzzCommand::CreateSubscription { id } => {
             let r = Subscription::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_integration_subscription(&id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_integration_subscription(&id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         BuzzCommand::DeleteSubscription {
             id,
             subscription_id,
         } => {
             dc.delete_integration_subscription(&id, &subscription_id)
+                .await
                 .unwrap();
         }
     }

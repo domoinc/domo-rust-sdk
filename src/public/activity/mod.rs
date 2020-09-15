@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 /// Activity Log Entry Object
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -60,15 +59,15 @@ impl super::Client {
     /// * end: The end time(milliseconds) of when you want to receive log events
     /// * limit: The maximum number of events you want to retrieve(default is 50, maximum of 1000)
     /// * offset: The offset location of events you retrieve(default is 0)
-    pub fn get_entries(
+    pub async fn get_entries(
         &self,
         user_id: Option<u64>,
         start: u64,
         end: Option<u64>,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<LogEntry>, Box<dyn Error>> {
-        let at = self.get_access_token("audit")?;
+    ) -> Result<Vec<LogEntry>, surf::Exception> {
+        let at = self.get_access_token("audit").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(uid) = user_id {
             q.push(("user", uid.to_string()));
@@ -83,13 +82,14 @@ impl super::Client {
         if let Some(v) = offset {
             q.push(("offset", v.to_string()));
         }
-        Ok(self
-            .client
-            .get(&format!("{}{}", self.host, "/v1/audit"))
-            .query(&q)
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?
-            .json()?)
+        let mut response = surf::get(&format!("{}{}", self.host, "/v1/audit"))
+            .set_query(&q)?
+            .set_header("Authorization", at)
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 }

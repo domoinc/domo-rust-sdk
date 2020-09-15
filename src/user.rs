@@ -38,17 +38,17 @@ pub enum UserCommand {
     Delete { user_id: String },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: UserCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: UserCommand) {
     match command {
         UserCommand::List { limit, offset } => {
-            let r = dc.get_users(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_users(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         UserCommand::ListAll {} => {
             let mut offset = 0_u32;
             let mut r: Vec<User> = Vec::new();
             loop {
-                let mut ret = dc.get_users(Some(50), Some(offset)).unwrap();
+                let mut ret = dc.get_users(Some(50), Some(offset)).await.unwrap();
                 let mut b = false;
                 if ret.len() < 50 {
                     b = true;
@@ -60,26 +60,26 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: UserCommand) {
                     break;
                 }
             }
-            util::vec_obj_template_output(r, t);
+            util::vec_obj_template_output(r, template);
         }
         UserCommand::Create {} => {
             let r = User::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_user(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_user(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         UserCommand::Retrieve { user_id } => {
-            let r = dc.get_user(&user_id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_user(&user_id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         UserCommand::Update { user_id } => {
-            let r = dc.get_user(&user_id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.put_user(&user_id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_user(&user_id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.put_user(&user_id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         UserCommand::Delete { user_id } => {
-            dc.delete_user(&user_id).unwrap();
+            dc.delete_user(&user_id).await.unwrap();
         }
     }
 }

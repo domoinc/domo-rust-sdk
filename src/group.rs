@@ -40,40 +40,40 @@ pub enum GroupCommand {
     RemoveUser { group_id: String, user_id: String },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: GroupCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: GroupCommand) {
     match command {
         GroupCommand::List { limit, offset } => {
-            let r = dc.get_groups(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_groups(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         GroupCommand::CreateGroup {} => {
             let r = Group::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_group(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_group(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         GroupCommand::Retrieve { id } => {
-            let r = dc.get_group(&id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_group(&id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         GroupCommand::UpdateGroup { id } => {
-            let r = dc.get_group(&id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.put_group(&id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_group(&id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.put_group(&id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         GroupCommand::DeleteGroup { id } => {
-            dc.delete_group(&id).unwrap();
+            dc.delete_group(&id).await.unwrap();
         }
         GroupCommand::ListUsers { id } => {
-            let r = dc.get_group_users(&id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_group_users(&id).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         GroupCommand::AddUser { group_id, user_id } => {
-            dc.put_group_user(&group_id, &user_id).unwrap();
+            dc.put_group_user(&group_id, &user_id).await.unwrap();
         }
         GroupCommand::RemoveUser { group_id, user_id } => {
-            dc.delete_group_user(&group_id, &user_id).unwrap();
+            dc.delete_group_user(&group_id, &user_id).await.unwrap();
         }
     }
 }

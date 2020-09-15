@@ -22,7 +22,7 @@ pub enum ActivityCommand {
     },
 }
 
-pub fn execute(dc: Client, t: Option<String>, command: ActivityCommand) {
+pub async fn execute(dc: Client, template: Option<String>, command: ActivityCommand) {
     match command {
         ActivityCommand::List {
             user_id,
@@ -31,8 +31,11 @@ pub fn execute(dc: Client, t: Option<String>, command: ActivityCommand) {
             limit,
             offset,
         } => {
-            let r = dc.get_entries(user_id, start, end, limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc
+                .get_entries(user_id, start, end, limit, offset)
+                .await
+                .unwrap();
+            util::vec_obj_template_output(r, template);
         }
     }
 }

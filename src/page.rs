@@ -41,43 +41,43 @@ pub enum PageCommand {
     DeleteCollection { id: u64, collection_id: u64 },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: PageCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: PageCommand) {
     match command {
         PageCommand::List { limit, offset } => {
-            let r = dc.get_pages(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_pages(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         PageCommand::Create {} => {
             let r = Page::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_page(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_page(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         PageCommand::Retrieve { id } => {
-            let r = dc.get_page(id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_page(id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         PageCommand::Update { id } => {
-            let r = dc.get_page(id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.put_page(id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_page(id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.put_page(id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         PageCommand::Delete { id } => {
-            dc.delete_page(id).unwrap();
+            dc.delete_page(id).await.unwrap();
         }
         PageCommand::ListCollections { id } => {
-            let r = dc.get_page_collections(id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_page_collections(id).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         PageCommand::CreateCollection { id } => {
             let r = Collection::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_page_collection(id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_page_collection(id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         PageCommand::UpdateCollection { id, collection_id } => {
-            let r = dc.get_page_collections(id).unwrap();
+            let r = dc.get_page_collections(id).await.unwrap();
             let r: Collection = {
                 let mut ret: Option<Collection> = None;
                 for c in r {
@@ -93,11 +93,11 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: PageCommand) {
                     panic!("Invalid Collection Id");
                 }
             };
-            let r = util::edit_obj(e, r, "").unwrap();
-            dc.put_page_collection(id, collection_id, r).unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            dc.put_page_collection(id, collection_id, r).await.unwrap();
         }
         PageCommand::DeleteCollection { id, collection_id } => {
-            dc.delete_page_collection(id, collection_id).unwrap();
+            dc.delete_page_collection(id, collection_id).await.unwrap();
         }
     }
 }

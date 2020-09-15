@@ -1,12 +1,30 @@
 Domo SDK
 ===
 
-Introducing the newest Domo SDK.
+<div align="center">
+  <!-- Crates version -->
+  <a href="https://crates.io/crates/domo">
+    <img src="https://img.shields.io/crates/v/domo.svg?style=flat-square"
+    alt="Crates.io version" />
+  </a>
+  <!-- Downloads -->
+  <a href="https://crates.io/crates/async-std">
+    <img src="https://img.shields.io/crates/d/domo.svg?style=flat-square"
+      alt="Download" />
+  </a>
+  <!-- docs.rs docs -->
+  <a href="https://docs.rs/domo">
+    <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square"
+      alt="docs.rs docs" />
+  </a>
+</div>
+
+Introducing the best Domo SDK.
 We are happy to help integrate your rust code and processes into Domo.
 Welcome to the Rust Domo SDK.
 This project aims to help developers build great Rust solutions for Domo.
 
-This project contains a binary cli application in addition to a library.
+This project contains a binary cli application in additon to a library.
 
 Getting Started
 ===
@@ -26,9 +44,9 @@ Domo offers a public API to Domo users that want to develop solutions against th
    - workflow
 1. [CLI] Set your environment up to use your client_id and client_secret
    - You can set them in your .bash_profile to keep them persistant
-   - `export DOMO_API_HOST=https://api.demo.domo.com`
+   - `export DOMO_API_HOST=https://api.domo.com`
    - `export DOMO_API_CLIENT_ID=your-client-id-here`
-   - `export DOMO_API_CLIENT_SECRET=YOURCLIENTSECRETHERE`
+   - `export DOMO_API_CLIENT_SECRET=your-client-secret-here`
    - Alternatively you can set them as flags.
 1. You're ready to go
 
@@ -41,9 +59,12 @@ Create the client
 
 	let domo = Domo::new(&app.host, &app.client_id, &app.client_secret);
 
-Use the methods on it
+Note: Please do not check your credentials into your code.
+We recommend using environment variables or other config that is not in your repo.
 
-        let r = domo.list_datasets(limit, offset).unwrap();
+Use methods on the provided client
+
+   let r = domo.list_datasets(limit, offset).await.unwrap();
 	
 
 Domo CLI
@@ -60,7 +81,18 @@ Currently offers wrappers around the api via sub-commands
 	domo workflow list
 	domo user list-all
 
-If you udpate or create a new object, it will open up an editor so you can modify the object in yaml format.
+If you update or create a new object, it will open up an editor so you can modify the object in yaml format.
 You can use the env flag DOMO_EDITOR to override which editor is used:
 
 	DOMO_EDITOR=nano dataset create
+
+Updates
+===
+
+2020-09-15 Version 0.2.0
+---
+
+* Updated to use the [surf](https://crates.io/crates/surf) library to offer the library as async
+* Due to this there is some functionality with uploading attachments in workflows that are not working
+* The binary now runs on async as well
+* Provided an error object for better error output including toes to send to support.

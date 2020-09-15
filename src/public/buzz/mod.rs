@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::error::Error;
 
 /// A Buzz integration is a service hosted outside of Domo’s infrastructure that can receive events from Buzz, and can post messages to Buzz. To use this feature, invoke this API to register an integration, then create one or more event subscriptions for the integration. When a corresponding event occur, Buzz will POST an HTTP request using the configured URL and headers.
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -217,71 +216,76 @@ pub struct Callback {
 /// Uses the form method_object
 impl super::Client {
     /// This endpoint returns all integrations that are active on any channel that the current user has access to.
-    pub fn get_integrations(&self) -> Result<Vec<Integration>, Box<dyn Error>> {
-        let at = self.get_access_token("buzz")?;
+    pub async fn get_integrations(&self) -> Result<Vec<Integration>, surf::Exception> {
+        let at = self.get_access_token("buzz").await?;
 
         #[derive(Serialize, Deserialize, Debug, Default)]
         #[serde(default, rename_all = "camelCase")]
         struct Ret {
             integrations: Vec<Integration>,
         }
-
-        let ret: Ret = self
-            .client
-            .get(&format!("{}{}", self.host, "/v1/buzz/integrations"))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?
-            .json()?;
+        let mut response = surf::get(&format!("{}{}", self.host, "/v1/buzz/integrations"))
+            .set_header("Authorization", at)
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        let ret: Ret = response.body_json().await?;
         Ok(ret.integrations)
     }
 
     /// Create a new integration
-    pub fn post_integration(
+    pub async fn post_integration(
         &self,
         integration: Integration,
-    ) -> Result<Integration, Box<dyn Error>> {
-        let at = self.get_access_token("buzz")?;
-        Ok(self
-            .client
-            .post(&format!("{}{}", self.host, "/v1/buzz/integrations"))
-            .header("Authorization", at)
-            .json(&integration)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    ) -> Result<Integration, surf::Exception> {
+        let at = self.get_access_token("buzz").await?;
+        let mut response = surf::post(&format!("{}{}", self.host, "/v1/buzz/integrations"))
+            .set_header("Authorization", at)
+            .body_json(&integration)?
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Retrieves an integration
-    pub fn get_integration(&self, id: &str) -> Result<Integration, Box<dyn Error>> {
-        let at = self.get_access_token("buzz")?;
-        Ok(self
-            .client
-            .get(&format!("{}{}{}", self.host, "/v1/buzz/integrations/", id))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    pub async fn get_integration(&self, id: &str) -> Result<Integration, surf::Exception> {
+        let at = self.get_access_token("buzz").await?;
+        let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/buzz/integrations/", id))
+            .set_header("Authorization", at)
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Permanently deletes a user from your Domo instance
     /// This is destructive and cannot be reversed.
-    pub fn delete_integration(&self, id: &str) -> Result<(), Box<dyn Error>> {
-        let at = self.get_access_token("buzz")?;
-        self.client
-            .delete(&format!("{}{}{}", self.host, "/v1/buzz/integrations/", id))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?;
-        Ok(())
+    pub async fn delete_integration(&self, id: &str) -> Result<(), surf::Exception> {
+        let at = self.get_access_token("buzz").await?;
+        let mut response =
+            surf::delete(&format!("{}{}{}", self.host, "/v1/buzz/integrations/", id))
+                .set_header("Authorization", at)
+                .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Get event subscriptions
-    pub fn get_integration_subscriptions(
+    pub async fn get_integration_subscriptions(
         &self,
         id: &str,
-    ) -> Result<Vec<Subscription>, Box<dyn Error>> {
-        let at = self.get_access_token("buzz")?;
+    ) -> Result<Vec<Subscription>, surf::Exception> {
+        let at = self.get_access_token("buzz").await?;
 
         #[derive(Serialize, Deserialize, Debug, Default)]
         #[serde(default, rename_all = "camelCase")]
@@ -289,16 +293,17 @@ impl super::Client {
             subscriptions: Vec<Subscription>,
         }
 
-        let ret: Ret = self
-            .client
-            .get(&format!(
-                "{}{}{}{}",
-                self.host, "/v1/buzz/integrations/", id, "/subscriptions"
-            ))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?
-            .json()?;
+        let mut response = surf::get(&format!(
+            "{}{}{}{}",
+            self.host, "/v1/buzz/integrations/", id, "/subscriptions"
+        ))
+        .set_header("Authorization", at)
+        .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        let ret: Ret = response.body_json().await?;
         Ok(ret.subscriptions)
     }
 
@@ -308,41 +313,44 @@ impl super::Client {
     /// * THREAD_CREATED: A thread was created on the parent channel
     /// * USERS_JOINED_CHANNEL: One or more users joined the channel
     /// * USERS_LEFT_CHANNEL: One or more users left the channel
-    pub fn post_integration_subscription(
+    pub async fn post_integration_subscription(
         &self,
         id: &str,
         subscription: Subscription,
-    ) -> Result<Subscription, Box<dyn Error>> {
-        let at = self.get_access_token("buzz")?;
-        Ok(self
-            .client
-            .post(&format!(
-                "{}{}{}{}",
-                self.host, "/v1/buzz/integrations/", id, "/subscriptions"
-            ))
-            .header("Authorization", at)
-            .json(&subscription)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    ) -> Result<Subscription, surf::Exception> {
+        let at = self.get_access_token("buzz").await?;
+        let mut response = surf::post(&format!(
+            "{}{}{}{}",
+            self.host, "/v1/buzz/integrations/", id, "/subscriptions"
+        ))
+        .set_header("Authorization", at)
+        .body_json(&subscription)?
+        .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Deletes an existing event subscription from a Buzz integration. The integration will no longer receive events for the given subscription.
     /// This is destructive and cannot be reversed.
-    pub fn delete_integration_subscription(
+    pub async fn delete_integration_subscription(
         &self,
         id: &str,
         subscription_id: &str,
-    ) -> Result<(), Box<dyn Error>> {
-        let at = self.get_access_token("buzz")?;
-        self.client
-            .delete(&format!(
-                "{}{}{}{}{}",
-                self.host, "/v1/buzz/integrations/", id, "/subscriptions/", subscription_id
-            ))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?;
-        Ok(())
+    ) -> Result<(), surf::Exception> {
+        let at = self.get_access_token("buzz").await?;
+        let mut response = surf::delete(&format!(
+            "{}{}{}{}{}",
+            self.host, "/v1/buzz/integrations/", id, "/subscriptions/", subscription_id
+        ))
+        .set_header("Authorization", at)
+        .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 }

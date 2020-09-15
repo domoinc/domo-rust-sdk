@@ -51,16 +51,16 @@ pub enum AccountCommand {
     RetrieveType { id: String },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: AccountCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: AccountCommand) {
     match command {
         AccountCommand::List { limit, offset } => {
-            let r = dc.get_accounts(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_accounts(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         AccountCommand::Create { account_type } => {
             //Go get the account type and then populate the template accordingly
             let mut r = Account::template();
-            let mut at = dc.get_account_type(&account_type).unwrap();
+            let mut at = dc.get_account_type(&account_type).await.unwrap();
             //Pre-pop the property fields from the default template
             if let Some(ref hm) = at.templates {
                 if hm.contains_key("default") {
@@ -75,35 +75,35 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: AccountCommand) 
                 }
             }
             r.account_type = Some(at);
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_account(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_account(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         AccountCommand::Retrieve { id } => {
-            let r = dc.get_account(&id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_account(&id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         AccountCommand::Update { id } => {
-            let r = dc.get_account(&id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            dc.patch_account(&id, r).unwrap();
+            let r = dc.get_account(&id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            dc.patch_account(&id, r).await.unwrap();
         }
         AccountCommand::Delete { id } => {
-            dc.delete_account(&id).unwrap();
+            dc.delete_account(&id).await.unwrap();
         }
         AccountCommand::Share {
             account_id,
             user_id,
         } => {
-            dc.post_account_share(&account_id, user_id).unwrap();
+            dc.post_account_share(&account_id, user_id).await.unwrap();
         }
         AccountCommand::ListTypes { limit, offset } => {
-            let r = dc.get_account_types(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_account_types(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         AccountCommand::RetrieveType { id } => {
-            let r = dc.get_account_type(&id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_account_type(&id).await.unwrap();
+            util::obj_template_output(r, template);
         }
     }
 }

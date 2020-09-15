@@ -129,27 +129,38 @@ enum DomoCommand {
     },
 }
 
-fn main() {
+#[async_std::main]
+async fn main() {
     let app = DomoApp::from_args();
 
     let dc = Client::new(&app.host, &app.client_id, &app.client_secret);
 
     match app.command {
         DomoCommand::Account { command } => {
-            account::execute(dc, &app.editor, app.template, command)
+            account::execute(dc, &app.editor, app.template, command).await
         }
-        DomoCommand::Activity { command } => activity::execute(dc, app.template, command),
-        DomoCommand::Buzz { command } => buzz::execute(dc, &app.editor, app.template, command),
+        DomoCommand::Activity { command } => activity::execute(dc, app.template, command).await,
+        DomoCommand::Buzz { command } => {
+            buzz::execute(dc, &app.editor, app.template, command).await
+        }
         DomoCommand::DataSet { command } => {
-            dataset::execute(dc, &app.editor, app.template, command)
+            dataset::execute(dc, &app.editor, app.template, command).await
         }
-        DomoCommand::Group { command } => group::execute(dc, &app.editor, app.template, command),
-        DomoCommand::Page { command } => page::execute(dc, &app.editor, app.template, command),
-        DomoCommand::Stream { command } => stream::execute(dc, &app.editor, app.template, command),
-        DomoCommand::User { command } => user::execute(dc, &app.editor, app.template, command),
-        DomoCommand::Webhook { command } => wh::execute(&app.editor, command),
+        DomoCommand::Group { command } => {
+            group::execute(dc, &app.editor, app.template, command).await
+        }
+        DomoCommand::Page { command } => {
+            page::execute(dc, &app.editor, app.template, command).await
+        }
+        DomoCommand::Stream { command } => {
+            stream::execute(dc, &app.editor, app.template, command).await
+        }
+        DomoCommand::User { command } => {
+            user::execute(dc, &app.editor, app.template, command).await
+        }
+        DomoCommand::Webhook { command } => wh::execute(&app.editor, command).await,
         DomoCommand::Workflow { command } => {
-            workflow::execute(dc, &app.editor, app.template, command)
+            workflow::execute(dc, &app.editor, app.template, command).await
         }
     }
 }

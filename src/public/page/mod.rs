@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 /// The page object is a screen where you can view a “collection” of data, which is typically displayed in cards.
 /// You use a page to organize, manage, and share content to other users in Domo.
@@ -121,12 +120,12 @@ impl Collection {
 /// Uses the form method_object
 impl super::Client {
     /// Get a list of all pages in your Domo instance.
-    pub fn get_pages(
+    pub async fn get_pages(
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Page>, Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
+    ) -> Result<Vec<Page>, surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
             q.push(("limit", v.to_string()));
@@ -134,39 +133,42 @@ impl super::Client {
         if let Some(v) = offset {
             q.push(("offset", v.to_string()));
         }
-        Ok(self
-            .client
-            .get(&format!("{}{}", self.host, "/v1/pages"))
-            .query(&q)
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?
-            .json()?)
+        let mut response = surf::get(&format!("{}{}", self.host, "/v1/pages"))
+            .set_query(&q)?
+            .set_header("Authorization", at)
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Creates a new page in your Domo instance.
-    pub fn post_page(&self, page: Page) -> Result<Page, Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        Ok(self
-            .client
-            .post(&format!("{}{}", self.host, "/v1/pages"))
-            .header("Authorization", at)
-            .json(&page)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    pub async fn post_page(&self, page: Page) -> Result<Page, surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::post(&format!("{}{}", self.host, "/v1/pages"))
+            .set_header("Authorization", at)
+            .body_json(&page)?
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Retrieves the details of an existing page.
-    pub fn get_page(&self, id: u64) -> Result<Page, Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        Ok(self
-            .client
-            .get(&format!("{}{}{}", self.host, "/v1/pages/", id))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    pub async fn get_page(&self, id: u64) -> Result<Page, surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/pages/", id))
+            .set_header("Authorization", at)
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Updates the specified page by providing values to parameters passed.
@@ -175,96 +177,105 @@ impl super::Client {
     /// Also, collections cannot be added or removed via this endpoint, only reordered.
     /// Giving access to a user or group will also cause that user or group to have access to the parent page (if the page is a subpage).
     /// Moving a page by updating the parentId will also cause everyone with access to the page to have access to the new parent page.
-    pub fn put_page(&self, id: u64, page: Page) -> Result<Page, Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        Ok(self
-            .client
-            .put(&format!("{}{}{}", self.host, "/v1/pages/", id))
-            .header("Authorization", at)
-            .json(&page)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    pub async fn put_page(&self, id: u64, page: Page) -> Result<Page, surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/pages/", id))
+            .set_header("Authorization", at)
+            .body_json(&page)?
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
     /// Permanently deletes a page from your Domo instance.
     /// This is destructive and cannot be reversed.
-    pub fn delete_page(&self, id: u64) -> Result<(), Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        self.client
-            .delete(&format!("{}{}{}", self.host, "/v1/pages/", id))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?;
-        Ok(())
+    pub async fn delete_page(&self, id: u64) -> Result<(), surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/pages/", id))
+            .set_header("Authorization", at)
+            .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
-    pub fn get_page_collections(&self, id: u64) -> Result<Vec<Collection>, Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        Ok(self
-            .client
-            .get(&format!(
-                "{}{}{}{}",
-                self.host, "/v1/pages/", id, "/collections"
-            ))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    pub async fn get_page_collections(&self, id: u64) -> Result<Vec<Collection>, surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::get(&format!(
+            "{}{}{}{}",
+            self.host, "/v1/pages/", id, "/collections"
+        ))
+        .set_header("Authorization", at)
+        .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
-    pub fn post_page_collection(
+    pub async fn post_page_collection(
         &self,
         id: u64,
         collection: Collection,
-    ) -> Result<Collection, Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        Ok(self
-            .client
-            .post(&format!(
-                "{}{}{}{}",
-                self.host, "/v1/pages/", id, "/collections"
-            ))
-            .header("Authorization", at)
-            .json(&collection)
-            .send()?
-            .error_for_status()?
-            .json()?)
+    ) -> Result<Collection, surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::post(&format!(
+            "{}{}{}{}",
+            self.host, "/v1/pages/", id, "/collections"
+        ))
+        .set_header("Authorization", at)
+        .body_json(&collection)?
+        .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
-    pub fn put_page_collection(
+    pub async fn put_page_collection(
         &self,
         id: u64,
         collection_id: u64,
         collection: Collection,
-    ) -> Result<(), Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        self.client
-            .put(&format!(
-                "{}{}{}{}{}",
-                self.host, "/v1/pages/", id, "/collections/", collection_id
-            ))
-            .header("Authorization", at)
-            .json(&collection)
-            .send()?
-            .error_for_status()?;
-        Ok(())
+    ) -> Result<(), surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::put(&format!(
+            "{}{}{}{}{}",
+            self.host, "/v1/pages/", id, "/collections/", collection_id
+        ))
+        .set_header("Authorization", at)
+        .body_json(&collection)?
+        .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 
-    pub fn delete_page_collection(
+    pub async fn delete_page_collection(
         &self,
         id: u64,
         collection_id: u64,
-    ) -> Result<(), Box<dyn Error>> {
-        let at = self.get_access_token("dashboard")?;
-        self.client
-            .delete(&format!(
-                "{}{}{}{}{}",
-                self.host, "/v1/pages/", id, "/collections/", collection_id
-            ))
-            .header("Authorization", at)
-            .send()?
-            .error_for_status()?;
-        Ok(())
+    ) -> Result<(), surf::Exception> {
+        let at = self.get_access_token("dashboard").await?;
+        let mut response = surf::delete(&format!(
+            "{}{}{}{}{}",
+            self.host, "/v1/pages/", id, "/collections/", collection_id
+        ))
+        .set_header("Authorization", at)
+        .await?;
+        if !response.status().is_success() {
+            let e: Box<super::PubAPIError> = response.body_json().await?;
+            return Err(e);
+        }
+        Ok(response.body_json().await?)
     }
 }

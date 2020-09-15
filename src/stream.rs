@@ -94,17 +94,17 @@ pub enum StreamCommand {
     },
 }
 
-pub fn execute(dc: Client, e: &str, t: Option<String>, command: StreamCommand) {
+pub async fn execute(dc: Client, editor: &str, template: Option<String>, command: StreamCommand) {
     match command {
         StreamCommand::List { limit, offset } => {
-            let r = dc.get_streams(limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_streams(limit, offset).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         StreamCommand::ListAll {} => {
             let mut offset = 0_u32;
             let mut r: Vec<Stream> = Vec::new();
             loop {
-                let mut ret = dc.get_streams(Some(50), Some(offset)).unwrap();
+                let mut ret = dc.get_streams(Some(50), Some(offset)).await.unwrap();
                 let mut b = false;
                 if ret.len() < 50 {
                     b = true;
@@ -116,53 +116,62 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: StreamCommand) {
                     break;
                 }
             }
-            util::vec_obj_template_output(r, t);
+            util::vec_obj_template_output(r, template);
         }
         StreamCommand::SearchOwners { owner_id } => {
-            let r = dc.get_stream_search_dataset_owner_id(&owner_id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc
+                .get_stream_search_dataset_owner_id(&owner_id)
+                .await
+                .unwrap();
+            util::vec_obj_template_output(r, template);
         }
         StreamCommand::SearchDatasetId { dataset_id } => {
-            let r = dc.get_stream_search_dataset_id(&dataset_id).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc.get_stream_search_dataset_id(&dataset_id).await.unwrap();
+            util::vec_obj_template_output(r, template);
         }
         StreamCommand::Create {} => {
             let r = Stream::template();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.post_stream(r).unwrap();
-            util::obj_template_output(r, t);
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.post_stream(r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         StreamCommand::Retrieve { stream_id } => {
-            let r = dc.get_stream(&stream_id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_stream(&stream_id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         StreamCommand::Update { stream_id } => {
-            let r = dc.get_stream(&stream_id).unwrap();
-            let r = util::edit_obj(e, r, "").unwrap();
-            let r = dc.patch_stream(&stream_id, r).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.get_stream(&stream_id).await.unwrap();
+            let r = util::edit_obj(editor, r, "").unwrap();
+            let r = dc.patch_stream(&stream_id, r).await.unwrap();
+            util::obj_template_output(r, template);
         }
         StreamCommand::Delete { stream_id } => {
-            dc.delete_stream(&stream_id).unwrap();
+            dc.delete_stream(&stream_id).await.unwrap();
         }
         StreamCommand::ListExecutions {
             stream_id,
             limit,
             offset,
         } => {
-            let r = dc.get_stream_executions(&stream_id, limit, offset).unwrap();
-            util::vec_obj_template_output(r, t);
+            let r = dc
+                .get_stream_executions(&stream_id, limit, offset)
+                .await
+                .unwrap();
+            util::vec_obj_template_output(r, template);
         }
         StreamCommand::CreateExecution { stream_id } => {
-            let r = dc.post_stream_execution(&stream_id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc.post_stream_execution(&stream_id).await.unwrap();
+            util::obj_template_output(r, template);
         }
         StreamCommand::RetrieveExecution {
             stream_id,
             execution_id,
         } => {
-            let r = dc.get_stream_execution(&stream_id, &execution_id).unwrap();
-            util::obj_template_output(r, t);
+            let r = dc
+                .get_stream_execution(&stream_id, &execution_id)
+                .await
+                .unwrap();
+            util::obj_template_output(r, template);
         }
         StreamCommand::UploadPart {
             file,
@@ -172,6 +181,7 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: StreamCommand) {
         } => {
             let csv = fs::read_to_string(file).unwrap();
             dc.put_stream_execution_part(&stream_id, &execution_id, &part_id, csv)
+                .await
                 .unwrap();
         }
         StreamCommand::CommitExecution {
@@ -180,14 +190,16 @@ pub fn execute(dc: Client, e: &str, t: Option<String>, command: StreamCommand) {
         } => {
             let r = dc
                 .put_stream_execution_commit(&stream_id, &execution_id)
+                .await
                 .unwrap();
-            util::obj_template_output(r, t);
+            util::obj_template_output(r, template);
         }
         StreamCommand::AbortExecution {
             stream_id,
             execution_id,
         } => {
             dc.put_stream_execution_abort(&stream_id, &execution_id)
+                .await
                 .unwrap();
         }
     }
