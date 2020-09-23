@@ -1,6 +1,6 @@
 [package]
 name = "domo"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Sean Murphy <sean.murphy@domo.com>"]
 edition = "2018"
 description = "The Domo Rust SDK wrapping our APIs. Also includes a CLI application."
@@ -10,7 +10,7 @@ homepage = "https://github.com/domoinc/domo-rust-sdk"
 repository = "https://github.com/domoinc/domo-rust-sdk"
 license-file = "LICENSE"
 keywords = ["cli", "api", "sdk"]
-categories = ["api-bindings", "command-line-interface", "command-line-utility"]
+categories = ["api-bindings", "command-line-interface", "command-line-utilities"]
 default-run = "domo"
 
 [dependencies]
