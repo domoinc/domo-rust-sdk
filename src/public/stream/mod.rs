@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::path::Path;
 
 use crate::public::dataset::DataSet;
 
@@ -287,7 +288,7 @@ impl super::Client {
         id: &str,
         execution_id: &str,
         part_id: &str,
-        csv: String,
+        csv: impl AsRef<Path>,
     ) -> Result<Execution, surf::Exception> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!(
@@ -295,7 +296,8 @@ impl super::Client {
             self.host, "/v1/streams/", id, "/executions/", execution_id, "/part/", part_id
         ))
         .set_header("Authorization", at)
-        .body_string(csv)
+        //TODO Have the csv data passed in as an async_std::io::Read
+        .body_file(csv)?
         .set_header("Content-Type", "text/csv")
         .await?;
         if !response.status().is_success() {

@@ -1,12 +1,10 @@
 use domo::public::dataset::{DataSet, Policy};
 use domo::public::Client;
+use super::util;
 
-use std::fs;
 use std::path::PathBuf;
 
 use structopt::StructOpt;
-
-use super::util;
 
 /// Wraps the dataset api
 #[derive(StructOpt, Debug)]
@@ -119,8 +117,7 @@ pub async fn execute(dc: Client, editor: &str, template: Option<String>, command
             dc.delete_dataset(&id).await.unwrap();
         }
         DataSetCommand::Import { file, id } => {
-            let csv = fs::read_to_string(file).unwrap();
-            dc.put_dataset_data(&id, csv).await.unwrap();
+            dc.put_dataset_data(&id, file).await.unwrap();
         }
         DataSetCommand::Export { id } => {
             let r = dc.get_dataset_data(&id).await.unwrap();

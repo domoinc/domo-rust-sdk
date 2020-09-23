@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
+use std::path::Path;
 
 /// The DataSet object allows you to create, import, export and manage DataSets and manage data permissions for DataSets within Domo.
 ///
@@ -350,15 +351,20 @@ impl super::Client {
     /// The only supported content type is currently CSV format.
     ///
     /// To upload data in CSV format, the Domo specification used for representing data grids in CSV format closely follows the RFC standard for CSV (RFC-4180).
-    pub async fn put_dataset_data(&self, id: &str, csv: String) -> Result<(), surf::Exception> {
+    pub async fn put_dataset_data(
+        &self,
+        id: &str,
+        csv: impl AsRef<Path>,
+    ) -> Result<(), surf::Exception> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}",
             self.host, "/v1/datasets/", id, "/data"
         ))
         .set_header("Authorization", at)
+        //TODO Have the csv data passed in as an async_std::io::Read
+        .body_file(csv)?
         .set_header("Content-Type", "text/csv")
-        .body_string(csv)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;

@@ -1,6 +1,6 @@
 [package]
 name = "domo"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Sean Murphy <sean.murphy@domo.com>"]
 edition = "2018"
 description = "The Domo Rust SDK wrapping our APIs. Also includes a CLI application."

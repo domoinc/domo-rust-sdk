@@ -1,12 +1,10 @@
 use domo::public::stream::Stream;
 use domo::public::Client;
+use super::util;
 
-use std::fs;
 use std::path::PathBuf;
 
 use structopt::StructOpt;
-
-use super::util;
 
 /// Wraps the stream api
 #[derive(StructOpt, Debug)]
@@ -179,8 +177,7 @@ pub async fn execute(dc: Client, editor: &str, template: Option<String>, command
             execution_id,
             part_id,
         } => {
-            let csv = fs::read_to_string(file).unwrap();
-            dc.put_stream_execution_part(&stream_id, &execution_id, &part_id, csv)
+            dc.put_stream_execution_part(&stream_id, &execution_id, &part_id, file)
                 .await
                 .unwrap();
         }
