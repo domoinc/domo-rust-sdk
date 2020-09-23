@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use crate::public::dataset::DataSet;
 
@@ -236,6 +237,7 @@ impl super::Client {
             self.host, "/v1/streams/", id, "/executions"
         ))
         .set_header("Authorization", at)
+        .body_json(&json!({}))?
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -293,8 +295,8 @@ impl super::Client {
             self.host, "/v1/streams/", id, "/executions/", execution_id, "/part/", part_id
         ))
         .set_header("Authorization", at)
-        .set_header("Content-Type", "text/csv")
         .body_string(csv)
+        .set_header("Content-Type", "text/csv")
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
