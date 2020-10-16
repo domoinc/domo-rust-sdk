@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use serde::{Deserialize, Serialize};
 
 impl super::Client {
@@ -8,7 +10,7 @@ impl super::Client {
         url: &str,
         token: &str,
         message: &str,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         #[derive(Serialize, Deserialize, Debug, Default)]
         #[serde(default, rename_all = "camelCase")]
         struct C {
@@ -25,8 +27,8 @@ impl super::Client {
             },
         };
         surf::post(&format!("{}", url))
-            .set_header("x-buzz-bot-token", token)
-            .body_json(&m)?
+            .header("x-buzz-bot-token", token)
+            .body(surf::Body::from_json(&m)?)
             .await?;
         Ok(())
     }

@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::path::Path;
+use std::{error::Error, path::Path};
 
 use crate::public::dataset::DataSet;
 
@@ -97,7 +97,7 @@ impl super::Client {
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Stream>, surf::Exception> {
+    ) -> Result<Vec<Stream>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -107,8 +107,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -122,11 +122,11 @@ impl super::Client {
     pub async fn get_stream_search_dataset_id(
         &self,
         dsid: &str,
-    ) -> Result<Vec<Stream>, surf::Exception> {
+    ) -> Result<Vec<Stream>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams/search"))
-            .set_query(&[("q", String::from("dataSource.id:") + dsid)])?
-            .set_header("Authorization", at)
+            .query(&[("q", String::from("dataSource.id:") + dsid)])?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -140,11 +140,11 @@ impl super::Client {
     pub async fn get_stream_search_dataset_owner_id(
         &self,
         dsoid: &str,
-    ) -> Result<Vec<Stream>, surf::Exception> {
+    ) -> Result<Vec<Stream>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams/search"))
-            .set_query(&[("q", String::from("dataSource.owner.id:") + dsoid)])?
-            .set_header("Authorization", at)
+            .query(&[("q", String::from("dataSource.owner.id:") + dsoid)])?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -156,11 +156,11 @@ impl super::Client {
     /// When creating a Stream, specify the DataSet properties (name and description) and as a convenience, the create Stream API will create a DataSet for you.
     /// In addition, you can only have one Stream open at a time. If you need to add additional data, we recommended adding more parts to the currently open Stream or executing a commit of the open stream before creating a new stream.
     /// The StreamAPI currently only allows you to import data to a DataSet created via the Stream API. For example, it is currently not supported to import data to a DataSet created by a Domo Connector.
-    pub async fn post_stream(&self, stream: Stream) -> Result<Stream, surf::Exception> {
+    pub async fn post_stream(&self, stream: Stream) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/streams"))
-            .set_header("Authorization", at)
-            .body_json(&stream)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&stream)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -170,10 +170,10 @@ impl super::Client {
     }
 
     /// Retrieves the details of an existing stream
-    pub async fn get_stream(&self, id: &str) -> Result<Stream, surf::Exception> {
+    pub async fn get_stream(&self, id: &str) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/streams/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -183,11 +183,11 @@ impl super::Client {
     }
 
     /// Updates the specified Stream’s metadata by providing values to parameters passed.
-    pub async fn patch_stream(&self, id: &str, stream: Stream) -> Result<Stream, surf::Exception> {
+    pub async fn patch_stream(&self, id: &str, stream: Stream) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::patch(&format!("{}{}{}", self.host, "/v1/streams/", id))
-            .set_header("Authorization", at)
-            .body_json(&stream)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&stream)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -197,10 +197,10 @@ impl super::Client {
     }
 
     /// Deletes a Stream from your Domo instance. This does not a delete the associated DataSet.
-    pub async fn delete_stream(&self, id: &str) -> Result<(), surf::Exception> {
+    pub async fn delete_stream(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/streams/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -214,13 +214,13 @@ impl super::Client {
         &self,
         id: &str,
         execution_id: &str,
-    ) -> Result<Execution, surf::Exception> {
+    ) -> Result<Execution, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions/", execution_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -231,14 +231,14 @@ impl super::Client {
 
     /// When you’re ready to upload data to your DataSet via a Stream, you first tell Domo that you’re ready to start sending data by creating an Execution.
     /// Creating an Execution on a Stream will abort all other Executions on that Stream. Each Stream can only have one active Execution at a time.
-    pub async fn post_stream_execution(&self, id: &str) -> Result<Execution, surf::Exception> {
+    pub async fn post_stream_execution(&self, id: &str) -> Result<Execution, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!(
             "{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions"
         ))
-        .set_header("Authorization", at)
-        .body_json(&json!({}))?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&json!({}))?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -256,7 +256,7 @@ impl super::Client {
         id: &str,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Execution>, surf::Exception> {
+    ) -> Result<Vec<Execution>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -269,8 +269,8 @@ impl super::Client {
             "{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions"
         ))
-        .set_query(&q)?
-        .set_header("Authorization", at)
+        .query(&q)?
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -289,16 +289,16 @@ impl super::Client {
         execution_id: &str,
         part_id: &str,
         csv: impl AsRef<Path>,
-    ) -> Result<Execution, surf::Exception> {
+    ) -> Result<Execution, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions/", execution_id, "/part/", part_id
         ))
-        .set_header("Authorization", at)
-        //TODO Have the csv data passed in as an async_std::io::Read
-        .body_file(csv)?
-        .set_header("Content-Type", "text/csv")
+        .header("Authorization", at)
+        //TODO Have the csv data passed in as an async_std::io::Read. <- Should just need to change the below to Body::from_reader
+        .body(surf::Body::from_file(csv).await?)
+        .header("Content-Type", "text/csv")
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -313,13 +313,13 @@ impl super::Client {
         &self,
         id: &str,
         execution_id: &str,
-    ) -> Result<Execution, surf::Exception> {
+    ) -> Result<Execution, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions/", execution_id, "/commit"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -334,13 +334,13 @@ impl super::Client {
         &self,
         id: &str,
         execution_id: &str,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions/", execution_id, "/abort"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;

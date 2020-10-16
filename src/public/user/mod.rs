@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use serde::{Deserialize, Serialize};
 
 /// User objects allow you to manage a user and the user’s attributes such as a department, phone number, employee number, email, and username. The API allows you to create, delete, retrieve a user or a list of users, and update user information
@@ -100,7 +102,7 @@ impl super::Client {
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<User>, surf::Exception> {
+    ) -> Result<Vec<User>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -110,8 +112,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/users"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -124,11 +126,11 @@ impl super::Client {
     pub async fn post_bulk_user_emails(
         &self,
         emails: &[String],
-    ) -> Result<Vec<User>, surf::Exception> {
+    ) -> Result<Vec<User>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/users/bulk/emails"))
-            .set_header("Authorization", at)
-            .body_json(&emails)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&emails)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -140,11 +142,11 @@ impl super::Client {
     /// Creates a new user in your Domo instance.
     ///
     /// TODO param sendInvite=true
-    pub async fn post_user(&self, user: User) -> Result<User, surf::Exception> {
+    pub async fn post_user(&self, user: User) -> Result<User, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/users"))
-            .set_header("Authorization", at)
-            .body_json(&user)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&user)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -156,10 +158,10 @@ impl super::Client {
     /// Retrieves the details of an existing user.
     ///
     /// Returns a user object if valid user ID was provided. When requesting, if the user ID is related to a user that has been deleted, a subset of the user information will be returned, including a deleted property, which will be true.
-    pub async fn get_user(&self, id: &str) -> Result<User, surf::Exception> {
+    pub async fn get_user(&self, id: &str) -> Result<User, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/users/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -170,11 +172,11 @@ impl super::Client {
 
     /// Updates the specified user by providing values to parameters passed. Any parameter left out of the request will cause the specific user’s attribute to remain unchanged
     /// Currently all user fields are required
-    pub async fn put_user(&self, id: &str, user: User) -> Result<User, surf::Exception> {
+    pub async fn put_user(&self, id: &str, user: User) -> Result<User, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/users/", id))
-            .set_header("Authorization", at)
-            .body_json(&user)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&user)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -185,10 +187,10 @@ impl super::Client {
 
     /// Permanently deletes a user from your Domo instance
     /// This is destructive and cannot be reversed.
-    pub async fn delete_user(&self, id: &str) -> Result<(), surf::Exception> {
+    pub async fn delete_user(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/users/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;

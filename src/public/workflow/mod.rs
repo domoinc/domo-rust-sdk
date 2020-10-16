@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{error::Error, path::PathBuf};
 
 /// “Projects and Tasks” is a project management tool that helps you take real action with simple planning, assigning, and task-tracking features. You can create projects with various tasks and assignments. Those tasks exist within swim lanes or lists, and can be moved from list to list to show progress through a particular workflow. You can use default lists or create new custom lists. You can also add attachments to individual tasks to reference relevant materials and other artifacts.
 /// Note: You will need to ensure that your client application has access to the Workflow scope in order to access the Projects and Tasks endpoints.
@@ -215,7 +215,7 @@ impl super::Client {
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Project>, surf::Exception> {
+    ) -> Result<Vec<Project>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -225,8 +225,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/projects/"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -241,11 +241,11 @@ impl super::Client {
     /// * name
     /// * members
     /// * public
-    pub async fn post_project(&self, project: Project) -> Result<Project, surf::Exception> {
+    pub async fn post_project(&self, project: Project) -> Result<Project, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/projects"))
-            .set_header("Authorization", at)
-            .body_json(&project)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&project)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -256,10 +256,10 @@ impl super::Client {
 
     /// Retrieves the details of an individual existing project given a project id.
     /// Use the special project ID me to return your personal project.
-    pub async fn get_project(&self, id: &str) -> Result<Project, surf::Exception> {
+    pub async fn get_project(&self, id: &str) -> Result<Project, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/projects/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -280,11 +280,11 @@ impl super::Client {
         &self,
         id: &str,
         project: Project,
-    ) -> Result<Project, surf::Exception> {
+    ) -> Result<Project, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/projects/", id))
-            .set_header("Authorization", at)
-            .body_json(&project)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&project)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -295,10 +295,10 @@ impl super::Client {
 
     /// Permanently deletes a project from your Domo instance.
     /// This is destructive and cannot be reversed.
-    pub async fn delete_project(&self, id: &str) -> Result<(), surf::Exception> {
+    pub async fn delete_project(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/projects/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -308,13 +308,13 @@ impl super::Client {
     }
 
     /// Retrieves a list of ids of the users that are members of the given project id.
-    pub async fn get_project_members(&self, id: &str) -> Result<Vec<u64>, surf::Exception> {
+    pub async fn get_project_members(&self, id: &str) -> Result<Vec<u64>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/projects/", id, "/members"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -328,14 +328,14 @@ impl super::Client {
         &self,
         id: &str,
         members: Vec<u64>,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}",
             self.host, "/v1/projects/", id, "/members"
         ))
-        .set_header("Authorization", at)
-        .body_json(&members)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&members)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -345,13 +345,13 @@ impl super::Client {
     }
 
     /// Retrieves all lists available within a given project id.
-    pub async fn get_project_lists(&self, id: &str) -> Result<Vec<List>, surf::Exception> {
+    pub async fn get_project_lists(&self, id: &str) -> Result<Vec<List>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/projects/", id, "/lists"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -372,14 +372,14 @@ impl super::Client {
         &self,
         project_id: &str,
         list: List,
-    ) -> Result<List, surf::Exception> {
+    ) -> Result<List, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::post(&format!(
             "{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists"
         ))
-        .set_header("Authorization", at)
-        .body_json(&list)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&list)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -393,13 +393,13 @@ impl super::Client {
         &self,
         project_id: &str,
         list_id: &str,
-    ) -> Result<List, surf::Exception> {
+    ) -> Result<List, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -421,14 +421,14 @@ impl super::Client {
         project_id: &str,
         list_id: &str,
         list: List,
-    ) -> Result<List, surf::Exception> {
+    ) -> Result<List, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id
         ))
-        .set_header("Authorization", at)
-        .body_json(&list)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&list)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -443,13 +443,13 @@ impl super::Client {
         &self,
         project_id: &str,
         list_id: &str,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::delete(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -467,7 +467,7 @@ impl super::Client {
         id: &str,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Task>, surf::Exception> {
+    ) -> Result<Vec<Task>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -480,8 +480,8 @@ impl super::Client {
             "{}{}{}{}",
             self.host, "/v1/projects/", id, "/tasks"
         ))
-        .set_query(&q)?
-        .set_header("Authorization", at)
+        .query(&q)?
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -500,7 +500,7 @@ impl super::Client {
         list_id: &str,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Task>, surf::Exception> {
+    ) -> Result<Vec<Task>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -513,8 +513,8 @@ impl super::Client {
             "{}{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id, "/tasks"
         ))
-        .set_query(&q)?
-        .set_header("Authorization", at)
+        .query(&q)?
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -536,14 +536,14 @@ impl super::Client {
         project_id: &str,
         list_id: &str,
         task: Task,
-    ) -> Result<Task, surf::Exception> {
+    ) -> Result<Task, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::post(&format!(
             "{}{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id, "/tasks"
         ))
-        .set_header("Authorization", at)
-        .body_json(&task)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&task)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -558,13 +558,13 @@ impl super::Client {
         project_id: &str,
         list_id: &str,
         task_id: &str,
-    ) -> Result<Task, surf::Exception> {
+    ) -> Result<Task, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id, "/tasks/", task_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -589,14 +589,14 @@ impl super::Client {
         list_id: &str,
         task_id: &str,
         task: Task,
-    ) -> Result<Task, surf::Exception> {
+    ) -> Result<Task, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id, "/tasks/", task_id
         ))
-        .set_header("Authorization", at)
-        .body_json(&task)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&task)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -611,13 +611,13 @@ impl super::Client {
         project_id: &str,
         list_id: &str,
         task_id: &str,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::delete(&format!(
             "{}{}{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id, "/tasks/", task_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -632,7 +632,7 @@ impl super::Client {
         project_id: &str,
         list_id: &str,
         task_id: &str,
-    ) -> Result<Vec<Attachment>, surf::Exception> {
+    ) -> Result<Vec<Attachment>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}{}{}{}{}",
@@ -645,7 +645,7 @@ impl super::Client {
             task_id,
             "/attachments"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -661,7 +661,7 @@ impl super::Client {
         list_id: &str,
         task_id: &str,
         attachment_id: &str,
-    ) -> Result<Vec<u8>, surf::Exception> {
+    ) -> Result<Vec<u8>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}{}{}{}{}{}",
@@ -675,7 +675,7 @@ impl super::Client {
             "/attachments/",
             attachment_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -691,7 +691,7 @@ impl super::Client {
         list_id: &str,
         task_id: &str,
         _path: PathBuf,
-    ) -> Result<Attachment, surf::Exception> {
+    ) -> Result<Attachment, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         //TODO Is there a way to upload a file using surf?
         //let form = reqwest::blocking::multipart::Form::new().file("file", path).unwrap();
@@ -706,7 +706,7 @@ impl super::Client {
             task_id,
             "/attachments"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         //TODO Need to do the equiv in surf
         //.multipart(form)
         .await?;
@@ -725,7 +725,7 @@ impl super::Client {
         list_id: &str,
         task_id: &str,
         attachment_id: &str,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::delete(&format!(
             "{}{}{}{}{}{}{}{}{}",
@@ -739,7 +739,7 @@ impl super::Client {
             "/attachments/",
             attachment_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;

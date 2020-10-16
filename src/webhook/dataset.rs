@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use serde_json::Value;
 
 impl super::Client {
@@ -5,8 +7,8 @@ impl super::Client {
     /// https://{customer}.domo.com/connectors/com.domo.connector.jsonwh
     ///
     /// Json data can then be sent into the dataset
-    pub async fn post_dataset_json(&self, url: &str, obj: Value) -> Result<(), surf::Exception> {
-        surf::post(&format!("{}", url)).body_json(&obj)?.await?;
+    pub async fn post_dataset_json(&self, url: &str, obj: Value) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+        surf::post(&format!("{}", url)).body(surf::Body::from_json(&obj)?).await?;
         Ok(())
     }
 }

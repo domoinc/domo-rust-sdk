@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use serde::{Deserialize, Serialize};
 
 /// The page object is a screen where you can view a “collection” of data, which is typically displayed in cards.
@@ -124,7 +126,7 @@ impl super::Client {
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Page>, surf::Exception> {
+    ) -> Result<Vec<Page>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -134,8 +136,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/pages"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -145,11 +147,11 @@ impl super::Client {
     }
 
     /// Creates a new page in your Domo instance.
-    pub async fn post_page(&self, page: Page) -> Result<Page, surf::Exception> {
+    pub async fn post_page(&self, page: Page) -> Result<Page, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/pages"))
-            .set_header("Authorization", at)
-            .body_json(&page)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&page)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -159,10 +161,10 @@ impl super::Client {
     }
 
     /// Retrieves the details of an existing page.
-    pub async fn get_page(&self, id: u64) -> Result<Page, surf::Exception> {
+    pub async fn get_page(&self, id: u64) -> Result<Page, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/pages/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -177,11 +179,11 @@ impl super::Client {
     /// Also, collections cannot be added or removed via this endpoint, only reordered.
     /// Giving access to a user or group will also cause that user or group to have access to the parent page (if the page is a subpage).
     /// Moving a page by updating the parentId will also cause everyone with access to the page to have access to the new parent page.
-    pub async fn put_page(&self, id: u64, page: Page) -> Result<Page, surf::Exception> {
+    pub async fn put_page(&self, id: u64, page: Page) -> Result<Page, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/pages/", id))
-            .set_header("Authorization", at)
-            .body_json(&page)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&page)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -192,10 +194,10 @@ impl super::Client {
 
     /// Permanently deletes a page from your Domo instance.
     /// This is destructive and cannot be reversed.
-    pub async fn delete_page(&self, id: u64) -> Result<(), surf::Exception> {
+    pub async fn delete_page(&self, id: u64) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/pages/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -204,13 +206,13 @@ impl super::Client {
         Ok(response.body_json().await?)
     }
 
-    pub async fn get_page_collections(&self, id: u64) -> Result<Vec<Collection>, surf::Exception> {
+    pub async fn get_page_collections(&self, id: u64) -> Result<Vec<Collection>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/pages/", id, "/collections"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -223,14 +225,14 @@ impl super::Client {
         &self,
         id: u64,
         collection: Collection,
-    ) -> Result<Collection, surf::Exception> {
+    ) -> Result<Collection, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::post(&format!(
             "{}{}{}{}",
             self.host, "/v1/pages/", id, "/collections"
         ))
-        .set_header("Authorization", at)
-        .body_json(&collection)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&collection)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -244,14 +246,14 @@ impl super::Client {
         id: u64,
         collection_id: u64,
         collection: Collection,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/pages/", id, "/collections/", collection_id
         ))
-        .set_header("Authorization", at)
-        .body_json(&collection)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&collection)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -264,13 +266,13 @@ impl super::Client {
         &self,
         id: u64,
         collection_id: u64,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::delete(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/pages/", id, "/collections/", collection_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;

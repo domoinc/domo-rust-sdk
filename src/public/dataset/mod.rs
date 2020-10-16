@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
-use std::path::Path;
+use std::{error::Error, path::Path};
 
 /// The DataSet object allows you to create, import, export and manage DataSets and manage data permissions for DataSets within Domo.
 ///
@@ -249,7 +249,7 @@ impl super::Client {
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<DataSet>, surf::Exception> {
+    ) -> Result<Vec<DataSet>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -259,8 +259,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/datasets"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -270,11 +270,11 @@ impl super::Client {
     }
 
     /// Creates a new DataSet in your Domo instance. Once the DataSet has been created, data can then be imported into the DataSet.
-    pub async fn post_dataset(&self, ds: DataSet) -> Result<DataSet, surf::Exception> {
+    pub async fn post_dataset(&self, ds: DataSet) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/datasets"))
-            .set_header("Authorization", at)
-            .body_json(&ds)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&ds)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -284,10 +284,10 @@ impl super::Client {
     }
 
     /// Retrieves the details of an existing DataSet.
-    pub async fn get_dataset(&self, id: &str) -> Result<DataSet, surf::Exception> {
+    pub async fn get_dataset(&self, id: &str) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/datasets/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -297,11 +297,11 @@ impl super::Client {
     }
 
     /// Updates the specified DataSet’s metadata by providing values to parameters passed.
-    pub async fn put_dataset(&self, id: &str, ds: DataSet) -> Result<DataSet, surf::Exception> {
+    pub async fn put_dataset(&self, id: &str, ds: DataSet) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/datasets/", id))
-            .set_header("Authorization", at)
-            .body_json(&ds)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&ds)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -313,10 +313,10 @@ impl super::Client {
     /// Permanently deletes a DataSet from your Domo instance. This can be done for all DataSets, not just those created through the API.
     ///
     /// This is destructive and cannot be reversed.
-    pub async fn delete_dataset(&self, id: &str) -> Result<(), surf::Exception> {
+    pub async fn delete_dataset(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/datasets/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -330,14 +330,14 @@ impl super::Client {
     /// Data types will be exported as they are currently stored in the dataset. In addition, the only supported export type is CSV.
     ///
     /// TODO Parameters includeHeader and fileName
-    pub async fn get_dataset_data(&self, id: &str) -> Result<String, surf::Exception> {
+    pub async fn get_dataset_data(&self, id: &str) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/datasets/", id, "/data"
         ))
-        .set_query(&[("includeHeader", "true")])?
-        .set_header("Authorization", at)
+        .query(&[("includeHeader", "true")])?
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -355,16 +355,16 @@ impl super::Client {
         &self,
         id: &str,
         csv: impl AsRef<Path>,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}",
             self.host, "/v1/datasets/", id, "/data"
         ))
-        .set_header("Authorization", at)
-        //TODO Have the csv data passed in as an async_std::io::Read
-        .body_file(csv)?
-        .set_header("Content-Type", "text/csv")
+        .header("Authorization", at)
+        //TODO Have the csv data passed in as an async_std::io::Read. <- Should just need to change the below to Body::from_reader
+        .body(surf::Body::from_file(csv).await?)
+        .header("Content-Type", "text/csv")
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -378,14 +378,14 @@ impl super::Client {
         &self,
         id: &str,
         query: &str,
-    ) -> Result<QueryResult, surf::Exception> {
+    ) -> Result<QueryResult, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!(
             "{}{}{}",
             self.host, "/v1/datasets/query/execute/", id
         ))
-        .set_header("Authorization", at)
-        .body_json(&json!({ "sql": query }))?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&json!({ "sql": query }))?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -395,13 +395,13 @@ impl super::Client {
     }
 
     /// List the Personalized Data Permission (PDP) policies for a specified DataSet.
-    pub async fn get_dataset_policies(&self, id: &str) -> Result<Vec<Policy>, surf::Exception> {
+    pub async fn get_dataset_policies(&self, id: &str) -> Result<Vec<Policy>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/datasets/", id, "/policies"
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -416,14 +416,14 @@ impl super::Client {
         &self,
         id: &str,
         policy: Policy,
-    ) -> Result<Policy, surf::Exception> {
+    ) -> Result<Policy, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!(
             "{}{}{}{}",
             self.host, "/v1/datasets/", id, "/policies"
         ))
-        .set_header("Authorization", at)
-        .body_json(&policy)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&policy)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -438,13 +438,13 @@ impl super::Client {
         &self,
         id: &str,
         policy_id: u32,
-    ) -> Result<Policy, surf::Exception> {
+    ) -> Result<Policy, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/datasets/", id, "/policies/", policy_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -459,14 +459,14 @@ impl super::Client {
         id: &str,
         policy_id: u32,
         policy: Policy,
-    ) -> Result<Policy, surf::Exception> {
+    ) -> Result<Policy, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/datasets/", id, "/policies/", policy_id
         ))
-        .set_header("Authorization", at)
-        .body_json(&policy)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&policy)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -482,13 +482,13 @@ impl super::Client {
         &self,
         id: &str,
         policy_id: u32,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::delete(&format!(
             "{}{}{}{}{}",
             self.host, "/v1/datasets/", id, "/policies/", policy_id
         ))
-        .set_header("Authorization", at)
+        .header("Authorization", at)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
