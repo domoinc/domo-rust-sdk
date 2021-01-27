@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -66,7 +68,7 @@ impl super::Client {
         end: Option<u64>,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<LogEntry>, surf::Exception> {
+    ) -> Result<Vec<LogEntry>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("audit").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(uid) = user_id {
@@ -83,8 +85,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/audit"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;

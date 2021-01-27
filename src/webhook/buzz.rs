@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -17,8 +19,8 @@ impl super::Client {
         &self,
         url: &str,
         message: Message,
-    ) -> Result<(), surf::Exception> {
-        surf::post(&format!("{}", url)).body_json(&message)?.await?;
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+        surf::post(&format!("{}", url)).body(surf::Body::from_json(&message)?).await?;
         Ok(())
     }
 }

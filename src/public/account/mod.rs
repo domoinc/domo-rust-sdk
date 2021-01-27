@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{error::Error, collections::HashMap};
 
 /// The Account API allows you to create, update, validate and share accounts in Domo.
 /// If you would like to manage a large number of accounts at scale from agencies or other 3rd party vendors that you currently manage individually through the Data Center in Domo, the Accounts API makes that possible.
@@ -101,7 +101,7 @@ impl super::Client {
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<Account>, surf::Exception> {
+    ) -> Result<Vec<Account>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -111,8 +111,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/accounts"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -127,11 +127,11 @@ impl super::Client {
     /// To retrieve which Account Type properties to specify, use the GET /v1/accounts/account-types/{ACCOUNT_TYPE_ID} endpoint.
     /// Returns an Account object when successful.
     /// The returned object will not contain any properties within the Account Type object.
-    pub async fn post_account(&self, account: Account) -> Result<Account, surf::Exception> {
+    pub async fn post_account(&self, account: Account) -> Result<Account, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/accounts"))
-            .set_header("Authorization", at)
-            .body_json(&account)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&account)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -143,10 +143,10 @@ impl super::Client {
     /// Retrieves the details of an existing account.
     /// Returns an Account object if a valid Account ID was provided.
     /// When requesting, the Account Type object will not contain any properties.
-    pub async fn get_account(&self, id: &str) -> Result<Account, surf::Exception> {
+    pub async fn get_account(&self, id: &str) -> Result<Account, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/accounts/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -159,11 +159,11 @@ impl super::Client {
     /// Returns the updated Account.
     ///
     /// TODO: Should probably return the updated object for consistency
-    pub async fn patch_account(&self, id: &str, account: Account) -> Result<(), surf::Exception> {
+    pub async fn patch_account(&self, id: &str, account: Account) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::patch(&format!("{}{}{}", self.host, "/v1/accounts/", id))
-            .set_header("Authorization", at)
-            .body_json(&account)?
+            .header("Authorization", at)
+            .body(surf::Body::from_json(&account)?)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -173,10 +173,10 @@ impl super::Client {
     }
 
     /// Deletes an Account from your Domo instance.
-    pub async fn delete_account(&self, id: &str) -> Result<(), surf::Exception> {
+    pub async fn delete_account(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/accounts/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -190,7 +190,7 @@ impl super::Client {
         &self,
         account_id: &str,
         user_id: u64,
-    ) -> Result<(), surf::Exception> {
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         // The User to share the Account with.
         // Only the User's id attribute is required.
@@ -212,8 +212,8 @@ impl super::Client {
             "{}{}{}{}",
             self.host, "/v1/accounts/", account_id, "/shares"
         ))
-        .set_header("Authorization", at)
-        .body_json(&obj)?
+        .header("Authorization", at)
+        .body(surf::Body::from_json(&obj)?)
         .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -228,7 +228,7 @@ impl super::Client {
         &self,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<Vec<AccountType>, surf::Exception> {
+    ) -> Result<Vec<AccountType>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut q: Vec<(&str, String)> = Vec::new();
         if let Some(v) = limit {
@@ -238,8 +238,8 @@ impl super::Client {
             q.push(("offset", v.to_string()));
         }
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/account-types"))
-            .set_query(&q)?
-            .set_header("Authorization", at)
+            .query(&q)?
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;
@@ -251,10 +251,10 @@ impl super::Client {
     /// Retrieve the details of an account type.
     /// This includes information on the properties required to create an Account of this type.
     /// Returns an Account Type object if valid Account Type ID was provided.
-    pub async fn get_account_type(&self, id: &str) -> Result<AccountType, surf::Exception> {
+    pub async fn get_account_type(&self, id: &str) -> Result<AccountType, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/account-types/", id))
-            .set_header("Authorization", at)
+            .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
             let e: Box<super::PubAPIError> = response.body_json().await?;

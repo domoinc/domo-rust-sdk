@@ -8,6 +8,8 @@ pub mod stream;
 pub mod user;
 pub mod workflow;
 
+use std::error::Error;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -55,15 +57,15 @@ impl Client {
     }
 
     /// Trades the client_id and client_secret for an access token via the oauth2 token endpoint.
-    async fn get_access_token(&self, scope: &str) -> Result<String, surf::Exception> {
+    async fn get_access_token(&self, scope: &str) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
         let mut auth_basic_str = String::new();
         auth_basic_str.push_str(&self.client_id);
         auth_basic_str.push_str(":");
         auth_basic_str.push_str(&self.client_secret);
         let auth_basic = base64::encode(auth_basic_str);
         let mut response = surf::get(&format!("{}{}", self.host, "/oauth/token"))
-            .set_query(&[("grant_type", "client_credentials"), ("scope", scope)])?
-            .set_header("Authorization", "Basic ".to_owned() + &auth_basic)
+            .query(&TokenQuery{ grant_type: "client_credentials", scope})?
+            .header("Authorization", "Basic ".to_owned() + &auth_basic)
             .await?;
         if !response.status().is_success() {
             let e: Box<PubAPIError> = response.body_json().await?;
@@ -72,4 +74,10 @@ impl Client {
         let json: Value = response.body_json().await?;
         Ok(String::from("Bearer ") + &json.get("access_token").unwrap().as_str().unwrap())
     }
+}
+
+#[derive(Serialize)]
+struct TokenQuery<'a> {
+    pub grant_type: &'a str,
+    pub scope: &'a str
 }
