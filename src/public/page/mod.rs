@@ -128,13 +128,15 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Page>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
+        #[derive(Serialize)]
+        struct QueryParams {
+            pub limit: Option<u32>,
+            pub offset: Option<u32>,
         }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = QueryParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/pages"))
             .query(&q)?
             .header("Authorization", at)

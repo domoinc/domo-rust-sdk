@@ -207,6 +207,12 @@ pub struct Attachment {
     pub mime_type: Option<String>,
 }
 
+#[derive(Serialize)]
+struct QueryParams {
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
+
 /// Workflow API methods
 /// Uses the form method_object
 impl super::Client {
@@ -217,13 +223,10 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Project>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
-        }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = QueryParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/projects/"))
             .query(&q)?
             .header("Authorization", at)
@@ -469,13 +472,10 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Task>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
-        }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = QueryParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/projects/", id, "/tasks"
@@ -502,13 +502,10 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Task>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
-        }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = QueryParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!(
             "{}{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id, "/tasks"
