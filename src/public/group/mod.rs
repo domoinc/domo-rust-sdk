@@ -69,13 +69,15 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Group>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
+        #[derive(Serialize)]
+        struct ListParams {
+            pub limit: Option<u32>,
+            pub offset: Option<u32>,
         }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = ListParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/groups"))
             .query(&q)?
             .header("Authorization", at)

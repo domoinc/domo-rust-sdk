@@ -99,13 +99,15 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Stream>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
+        #[derive(Serialize)]
+        struct QueryParams {
+            pub limit: Option<u32>,
+            pub offset: Option<u32>,
         }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = QueryParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams"))
             .query(&q)?
             .header("Authorization", at)
@@ -124,8 +126,15 @@ impl super::Client {
         dsid: &str,
     ) -> Result<Vec<Stream>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
+        #[derive(Serialize)]
+        struct QueryParams {
+            pub q: String
+        }
+        let query = QueryParams {
+            q: String::from("dataSource.id:") + dsid
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams/search"))
-            .query(&[("q", String::from("dataSource.id:") + dsid)])?
+            .query(&query)?
             .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
@@ -142,8 +151,15 @@ impl super::Client {
         dsoid: &str,
     ) -> Result<Vec<Stream>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
+        #[derive(Serialize)]
+        struct QueryParams {
+            pub q: String
+        }
+        let query = QueryParams {
+            q: String::from("dataSource.owner.id:") + dsoid
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams/search"))
-            .query(&[("q", String::from("dataSource.owner.id:") + dsoid)])?
+            .query(&query)?
             .header("Authorization", at)
             .await?;
         if !response.status().is_success() {
@@ -258,13 +274,15 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Execution>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
+        #[derive(Serialize)]
+        struct QueryParams {
+            pub limit: Option<u32>,
+            pub offset: Option<u32>,
         }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = QueryParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions"

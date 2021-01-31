@@ -50,6 +50,14 @@ pub struct LogEntry {
     pub ip_address: Option<String>,
 }
 
+#[derive(Serialize)]
+struct ListParams {
+    pub user_id: Option<u64>,
+    pub start: u64,
+    pub end: Option<u64>,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
 /// Activity Log API methods
 /// Uses the form method_object
 impl super::Client {
@@ -70,20 +78,13 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<LogEntry>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("audit").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(uid) = user_id {
-            q.push(("user", uid.to_string()));
-        }
-        q.push(("start", start.to_string()));
-        if let Some(v) = end {
-            q.push(("end", v.to_string()));
-        }
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
-        }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = ListParams {
+            user_id,
+            start,
+            end,
+            limit,
+            offset
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/audit"))
             .query(&q)?
             .header("Authorization", at)

@@ -256,13 +256,17 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<DataSet>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
+        #[derive(Serialize)]
+        struct ListParams {
+            pub limit: Option<u32>,
+            pub offset: Option<u32>,
+            pub sort: String,
         }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = ListParams {
+            limit,
+            offset,
+            sort: "name".to_string()
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/datasets"))
             .query(&q)?
             .header("Authorization", at)
@@ -337,11 +341,19 @@ impl super::Client {
     /// TODO Parameters includeHeader and fileName
     pub async fn get_dataset_data(&self, id: &str) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
+        #[derive(Serialize)]
+        struct QueryParams {
+            #[serde(rename = "includeHeader")]
+            pub include_header: bool
+        }
+        let q = QueryParams {
+            include_header: true,
+        };
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/datasets/", id, "/data"
         ))
-        .query(&[("includeHeader", "true")])?
+        .query(&q)?
         .header("Authorization", at)
         .await?;
         if !response.status().is_success() {

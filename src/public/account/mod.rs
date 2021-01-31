@@ -92,6 +92,12 @@ pub struct Property {
     pub required: Option<bool>,
 }
 
+#[derive(Serialize)]
+struct ListParams {
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
+
 /// Account API methods
 /// Uses the form method_object
 impl super::Client {
@@ -103,13 +109,10 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Account>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
-        }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = ListParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/accounts"))
             .query(&q)?
             .header("Authorization", at)
@@ -230,13 +233,10 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<AccountType>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
-        let mut q: Vec<(&str, String)> = Vec::new();
-        if let Some(v) = limit {
-            q.push(("limit", v.to_string()));
-        }
-        if let Some(v) = offset {
-            q.push(("offset", v.to_string()));
-        }
+        let q = ListParams {
+            limit,
+            offset,
+        };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/account-types"))
             .query(&q)?
             .header("Authorization", at)
