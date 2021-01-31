@@ -52,6 +52,7 @@ pub struct LogEntry {
 
 #[derive(Serialize)]
 struct ListParams {
+    #[serde(rename = "user")]
     pub user_id: Option<u64>,
     pub start: u64,
     pub end: Option<u64>,

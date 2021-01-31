@@ -143,7 +143,7 @@ pub struct Policy {
     pub users: Option<Vec<u64>>,
     
     /// List of virtual Ids the policy applies to
-    pub virtualUsers: Option<Vec<String>>,
+    pub virtual_users: Option<Vec<String>>,
 
     /// List of group IDs the policy applies to
     pub groups: Option<Vec<String>>,
@@ -157,7 +157,7 @@ impl Policy {
             policy_type: None,
             filters: None,
             users: None,
-            virtualUsers: None,
+            virtual_users: None,
             groups: None,
         }
     }
@@ -174,7 +174,7 @@ impl Policy {
                 values: vec![String::from("values in this column that match will apply")],
             }]),
             users: Some(vec![27]),
-            virtualUsers: Some(vec![String::from("vu:324ds")]),
+            virtual_users: Some(vec![String::from("vu:324ds")]),
             groups: Some(vec![String::from("15")]),
         }
     }
