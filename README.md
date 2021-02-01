@@ -89,6 +89,14 @@ You can use the env flag DOMO_EDITOR to override which editor is used:
 Updates
 ===
 
+2021-01-31 Version 0.3.1
+---
+
+* Updated surf to 2
+* Bugfix on dataset API
+* Updated dependencies to latest
+* Thanks to @ryanmurf and @TrashPandacoot for contributions
+
 2020-09-15 Version 0.2.0
 ---
 
