@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{error::Error, collections::HashMap};
+use std::{collections::HashMap, error::Error};
 
 /// A Buzz integration is a service hosted outside of Domo’s infrastructure that can receive events from Buzz, and can post messages to Buzz. To use this feature, invoke this API to register an integration, then create one or more event subscriptions for the integration. When a corresponding event occur, Buzz will POST an HTTP request using the configured URL and headers.
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -216,7 +216,9 @@ pub struct Callback {
 /// Uses the form method_object
 impl super::Client {
     /// This endpoint returns all integrations that are active on any channel that the current user has access to.
-    pub async fn get_integrations(&self) -> Result<Vec<Integration>, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_integrations(
+        &self,
+    ) -> Result<Vec<Integration>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("buzz").await?;
 
         #[derive(Serialize, Deserialize, Debug, Default)]
@@ -253,7 +255,10 @@ impl super::Client {
     }
 
     /// Retrieves an integration
-    pub async fn get_integration(&self, id: &str) -> Result<Integration, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_integration(
+        &self,
+        id: &str,
+    ) -> Result<Integration, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("buzz").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/buzz/integrations/", id))
             .header("Authorization", at)
@@ -267,7 +272,10 @@ impl super::Client {
 
     /// Permanently deletes a user from your Domo instance
     /// This is destructive and cannot be reversed.
-    pub async fn delete_integration(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn delete_integration(
+        &self,
+        id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("buzz").await?;
         let mut response =
             surf::delete(&format!("{}{}{}", self.host, "/v1/buzz/integrations/", id))

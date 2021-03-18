@@ -84,7 +84,7 @@ impl super::Client {
             start,
             end,
             limit,
-            offset
+            offset,
         };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/audit"))
             .query(&q)?

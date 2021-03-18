@@ -104,10 +104,7 @@ impl super::Client {
             pub limit: Option<u32>,
             pub offset: Option<u32>,
         }
-        let q = QueryParams {
-            limit,
-            offset,
-        };
+        let q = QueryParams { limit, offset };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams"))
             .query(&q)?
             .header("Authorization", at)
@@ -128,10 +125,10 @@ impl super::Client {
         let at = self.get_access_token("data").await?;
         #[derive(Serialize)]
         struct QueryParams {
-            pub q: String
+            pub q: String,
         }
         let query = QueryParams {
-            q: String::from("dataSource.id:") + dsid
+            q: String::from("dataSource.id:") + dsid,
         };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams/search"))
             .query(&query)?
@@ -153,10 +150,10 @@ impl super::Client {
         let at = self.get_access_token("data").await?;
         #[derive(Serialize)]
         struct QueryParams {
-            pub q: String
+            pub q: String,
         }
         let query = QueryParams {
-            q: String::from("dataSource.owner.id:") + dsoid
+            q: String::from("dataSource.owner.id:") + dsoid,
         };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/streams/search"))
             .query(&query)?
@@ -172,7 +169,10 @@ impl super::Client {
     /// When creating a Stream, specify the DataSet properties (name and description) and as a convenience, the create Stream API will create a DataSet for you.
     /// In addition, you can only have one Stream open at a time. If you need to add additional data, we recommended adding more parts to the currently open Stream or executing a commit of the open stream before creating a new stream.
     /// The StreamAPI currently only allows you to import data to a DataSet created via the Stream API. For example, it is currently not supported to import data to a DataSet created by a Domo Connector.
-    pub async fn post_stream(&self, stream: Stream) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn post_stream(
+        &self,
+        stream: Stream,
+    ) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/streams"))
             .header("Authorization", at)
@@ -186,7 +186,10 @@ impl super::Client {
     }
 
     /// Retrieves the details of an existing stream
-    pub async fn get_stream(&self, id: &str) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_stream(
+        &self,
+        id: &str,
+    ) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/streams/", id))
             .header("Authorization", at)
@@ -199,7 +202,11 @@ impl super::Client {
     }
 
     /// Updates the specified Stream’s metadata by providing values to parameters passed.
-    pub async fn patch_stream(&self, id: &str, stream: Stream) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn patch_stream(
+        &self,
+        id: &str,
+        stream: Stream,
+    ) -> Result<Stream, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::patch(&format!("{}{}{}", self.host, "/v1/streams/", id))
             .header("Authorization", at)
@@ -213,7 +220,10 @@ impl super::Client {
     }
 
     /// Deletes a Stream from your Domo instance. This does not a delete the associated DataSet.
-    pub async fn delete_stream(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn delete_stream(
+        &self,
+        id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/streams/", id))
             .header("Authorization", at)
@@ -247,7 +257,10 @@ impl super::Client {
 
     /// When you’re ready to upload data to your DataSet via a Stream, you first tell Domo that you’re ready to start sending data by creating an Execution.
     /// Creating an Execution on a Stream will abort all other Executions on that Stream. Each Stream can only have one active Execution at a time.
-    pub async fn post_stream_execution(&self, id: &str) -> Result<Execution, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn post_stream_execution(
+        &self,
+        id: &str,
+    ) -> Result<Execution, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!(
             "{}{}{}{}",
@@ -279,10 +292,7 @@ impl super::Client {
             pub limit: Option<u32>,
             pub offset: Option<u32>,
         }
-        let q = QueryParams {
-            limit,
-            offset,
-        };
+        let q = QueryParams { limit, offset };
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/streams/", id, "/executions"

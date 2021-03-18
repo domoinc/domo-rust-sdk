@@ -14,7 +14,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 pub fn vec_obj_template_output<T: Serialize + Debug>(r: Vec<T>, template: Option<String>) {
-    match template.as_ref().map(String::as_str) {
+    match template.as_deref() {
         Some("debug") => println!("{:#?}", r),
         Some("json") => {
             println!("{}", serde_json::to_string(&r).unwrap());
@@ -33,7 +33,7 @@ pub fn vec_obj_template_output<T: Serialize + Debug>(r: Vec<T>, template: Option
 }
 
 pub fn obj_template_output<T: Serialize + Debug>(r: T, template: Option<String>) {
-    match template.as_ref().map(String::as_str) {
+    match template.as_deref() {
         Some("debug") => println!("{:#?}", r),
         Some("json") => {
             println!("{}", serde_json::to_string(&r).unwrap());
@@ -46,7 +46,7 @@ pub fn obj_template_output<T: Serialize + Debug>(r: T, template: Option<String>)
 }
 
 pub fn query_template_output(r: QueryResult, template: Option<String>) {
-    match template.as_ref().map(String::as_str) {
+    match template.as_deref() {
         Some("debug") => println!("{:#?}", r),
         Some("json") => {
             println!("{}", serde_json::to_string(&r).unwrap());
@@ -75,7 +75,7 @@ pub fn query_template_output(r: QueryResult, template: Option<String>) {
 }
 
 pub fn csv_template_output(r: String, template: Option<String>) {
-    match template.as_ref().map(String::as_str) {
+    match template.as_deref() {
         Some("debug") => println!("{}", r),
         Some("json") => {
             let mut aggr: Vec<Vec<String>> = Vec::new();

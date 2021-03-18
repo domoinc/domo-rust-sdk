@@ -41,10 +41,7 @@ pub async fn execute(editor: &str, command: WebhookCommand) {
         }
         WebhookCommand::CreateBuzzMessage { url, title } => {
             let t = util::edit_md(editor, "Your message here").unwrap();
-            let m = Message {
-                title: title,
-                text: t,
-            };
+            let m = Message { title, text: t };
             c.post_buzz_message(&url, m).await.unwrap();
         }
         WebhookCommand::CreateDatasetJson { url } => {

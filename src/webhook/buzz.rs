@@ -20,7 +20,9 @@ impl super::Client {
         url: &str,
         message: Message,
     ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-        surf::post(&format!("{}", url)).body(surf::Body::from_json(&message)?).await?;
+        surf::post(url.to_string())
+            .body(surf::Body::from_json(&message)?)
+            .await?;
         Ok(())
     }
 }

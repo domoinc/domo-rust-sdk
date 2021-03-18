@@ -23,10 +23,10 @@ impl super::Client {
         }
         let m = M {
             content: C {
-                text: format!("{}", message),
+                text: message.to_string(),
             },
         };
-        surf::post(&format!("{}", url))
+        surf::post(url.to_string())
             .header("x-buzz-bot-token", token)
             .body(surf::Body::from_json(&m)?)
             .await?;

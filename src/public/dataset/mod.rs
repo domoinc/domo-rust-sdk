@@ -141,7 +141,7 @@ pub struct Policy {
 
     /// List of user IDs the policy applies to
     pub users: Option<Vec<u64>>,
-    
+
     /// List of virtual Ids the policy applies to
     pub virtual_users: Option<Vec<String>>,
 
@@ -236,14 +236,17 @@ pub struct QueryMetadata {
     /// TODO This should be dataset (consistency)
     pub datasource_id: Option<String>,
 
-    /// TODO Not sure what this is
+    /// max length
     pub max_length: Option<i32>,
 
-    /// TODO Not sure what this is
+    /// min length
     pub min_length: Option<i32>,
 
-    /// TODO Not sure what this is
-    pub period_index: Option<u32>,
+    /// period index
+    pub period_index: Option<i32>,
+
+    // aggregated
+    pub aggregated: Option<bool>,
 }
 
 /// DataSet API methods
@@ -265,7 +268,7 @@ impl super::Client {
         let q = ListParams {
             limit,
             offset,
-            sort: "name".to_string()
+            sort: "name".to_string(),
         };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/datasets"))
             .query(&q)?
@@ -279,7 +282,10 @@ impl super::Client {
     }
 
     /// Creates a new DataSet in your Domo instance. Once the DataSet has been created, data can then be imported into the DataSet.
-    pub async fn post_dataset(&self, ds: DataSet) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn post_dataset(
+        &self,
+        ds: DataSet,
+    ) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/datasets"))
             .header("Authorization", at)
@@ -293,7 +299,10 @@ impl super::Client {
     }
 
     /// Retrieves the details of an existing DataSet.
-    pub async fn get_dataset(&self, id: &str) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_dataset(
+        &self,
+        id: &str,
+    ) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/datasets/", id))
             .header("Authorization", at)
@@ -306,7 +315,11 @@ impl super::Client {
     }
 
     /// Updates the specified DataSet’s metadata by providing values to parameters passed.
-    pub async fn put_dataset(&self, id: &str, ds: DataSet) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn put_dataset(
+        &self,
+        id: &str,
+        ds: DataSet,
+    ) -> Result<DataSet, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/datasets/", id))
             .header("Authorization", at)
@@ -322,7 +335,10 @@ impl super::Client {
     /// Permanently deletes a DataSet from your Domo instance. This can be done for all DataSets, not just those created through the API.
     ///
     /// This is destructive and cannot be reversed.
-    pub async fn delete_dataset(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn delete_dataset(
+        &self,
+        id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/datasets/", id))
             .header("Authorization", at)
@@ -339,12 +355,15 @@ impl super::Client {
     /// Data types will be exported as they are currently stored in the dataset. In addition, the only supported export type is CSV.
     ///
     /// TODO Parameters includeHeader and fileName
-    pub async fn get_dataset_data(&self, id: &str) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_dataset_data(
+        &self,
+        id: &str,
+    ) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         #[derive(Serialize)]
         struct QueryParams {
             #[serde(rename = "includeHeader")]
-            pub include_header: bool
+            pub include_header: bool,
         }
         let q = QueryParams {
             include_header: true,
@@ -412,7 +431,10 @@ impl super::Client {
     }
 
     /// List the Personalized Data Permission (PDP) policies for a specified DataSet.
-    pub async fn get_dataset_policies(&self, id: &str) -> Result<Vec<Policy>, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_dataset_policies(
+        &self,
+        id: &str,
+    ) -> Result<Vec<Policy>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("data").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",

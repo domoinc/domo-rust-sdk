@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{error::Error, collections::HashMap};
+use std::{collections::HashMap, error::Error};
 
 /// The Account API allows you to create, update, validate and share accounts in Domo.
 /// If you would like to manage a large number of accounts at scale from agencies or other 3rd party vendors that you currently manage individually through the Data Center in Domo, the Accounts API makes that possible.
@@ -109,10 +109,7 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Account>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
-        let q = ListParams {
-            limit,
-            offset,
-        };
+        let q = ListParams { limit, offset };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/accounts"))
             .query(&q)?
             .header("Authorization", at)
@@ -130,7 +127,10 @@ impl super::Client {
     /// To retrieve which Account Type properties to specify, use the GET /v1/accounts/account-types/{ACCOUNT_TYPE_ID} endpoint.
     /// Returns an Account object when successful.
     /// The returned object will not contain any properties within the Account Type object.
-    pub async fn post_account(&self, account: Account) -> Result<Account, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn post_account(
+        &self,
+        account: Account,
+    ) -> Result<Account, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/accounts"))
             .header("Authorization", at)
@@ -146,7 +146,10 @@ impl super::Client {
     /// Retrieves the details of an existing account.
     /// Returns an Account object if a valid Account ID was provided.
     /// When requesting, the Account Type object will not contain any properties.
-    pub async fn get_account(&self, id: &str) -> Result<Account, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_account(
+        &self,
+        id: &str,
+    ) -> Result<Account, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/accounts/", id))
             .header("Authorization", at)
@@ -162,7 +165,11 @@ impl super::Client {
     /// Returns the updated Account.
     ///
     /// TODO: Should probably return the updated object for consistency
-    pub async fn patch_account(&self, id: &str, account: Account) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn patch_account(
+        &self,
+        id: &str,
+        account: Account,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::patch(&format!("{}{}{}", self.host, "/v1/accounts/", id))
             .header("Authorization", at)
@@ -176,7 +183,10 @@ impl super::Client {
     }
 
     /// Deletes an Account from your Domo instance.
-    pub async fn delete_account(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn delete_account(
+        &self,
+        id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/accounts/", id))
             .header("Authorization", at)
@@ -233,10 +243,7 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<AccountType>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
-        let q = ListParams {
-            limit,
-            offset,
-        };
+        let q = ListParams { limit, offset };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/account-types"))
             .query(&q)?
             .header("Authorization", at)
@@ -251,7 +258,10 @@ impl super::Client {
     /// Retrieve the details of an account type.
     /// This includes information on the properties required to create an Account of this type.
     /// Returns an Account Type object if valid Account Type ID was provided.
-    pub async fn get_account_type(&self, id: &str) -> Result<AccountType, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_account_type(
+        &self,
+        id: &str,
+    ) -> Result<AccountType, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("account").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/account-types/", id))
             .header("Authorization", at)

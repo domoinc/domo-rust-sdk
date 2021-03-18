@@ -223,10 +223,7 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Project>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
-        let q = QueryParams {
-            limit,
-            offset,
-        };
+        let q = QueryParams { limit, offset };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/projects/"))
             .query(&q)?
             .header("Authorization", at)
@@ -244,7 +241,10 @@ impl super::Client {
     /// * name
     /// * members
     /// * public
-    pub async fn post_project(&self, project: Project) -> Result<Project, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn post_project(
+        &self,
+        project: Project,
+    ) -> Result<Project, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/projects"))
             .header("Authorization", at)
@@ -259,7 +259,10 @@ impl super::Client {
 
     /// Retrieves the details of an individual existing project given a project id.
     /// Use the special project ID me to return your personal project.
-    pub async fn get_project(&self, id: &str) -> Result<Project, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_project(
+        &self,
+        id: &str,
+    ) -> Result<Project, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!("{}{}{}", self.host, "/v1/projects/", id))
             .header("Authorization", at)
@@ -298,7 +301,10 @@ impl super::Client {
 
     /// Permanently deletes a project from your Domo instance.
     /// This is destructive and cannot be reversed.
-    pub async fn delete_project(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn delete_project(
+        &self,
+        id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/projects/", id))
             .header("Authorization", at)
@@ -311,7 +317,10 @@ impl super::Client {
     }
 
     /// Retrieves a list of ids of the users that are members of the given project id.
-    pub async fn get_project_members(&self, id: &str) -> Result<Vec<u64>, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_project_members(
+        &self,
+        id: &str,
+    ) -> Result<Vec<u64>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",
@@ -348,7 +357,10 @@ impl super::Client {
     }
 
     /// Retrieves all lists available within a given project id.
-    pub async fn get_project_lists(&self, id: &str) -> Result<Vec<List>, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_project_lists(
+        &self,
+        id: &str,
+    ) -> Result<Vec<List>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",
@@ -472,10 +484,7 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Task>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
-        let q = QueryParams {
-            limit,
-            offset,
-        };
+        let q = QueryParams { limit, offset };
         let mut response = surf::get(&format!(
             "{}{}{}{}",
             self.host, "/v1/projects/", id, "/tasks"
@@ -502,10 +511,7 @@ impl super::Client {
         offset: Option<u32>,
     ) -> Result<Vec<Task>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("workflow").await?;
-        let q = QueryParams {
-            limit,
-            offset,
-        };
+        let q = QueryParams { limit, offset };
         let mut response = surf::get(&format!(
             "{}{}{}{}{}{}",
             self.host, "/v1/projects/", project_id, "/lists/", list_id, "/tasks"

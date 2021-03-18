@@ -1,6 +1,6 @@
+use super::util;
 use domo::public::dataset::{DataSet, Policy};
 use domo::public::Client;
-use super::util;
 
 use std::path::PathBuf;
 

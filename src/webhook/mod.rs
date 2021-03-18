@@ -10,3 +10,9 @@ impl Client {
         Self {}
     }
 }
+
+impl Default for Client {
+    fn default() -> Self {
+        Self::new()
+    }
+}

@@ -133,10 +133,7 @@ impl super::Client {
             pub limit: Option<u32>,
             pub offset: Option<u32>,
         }
-        let q = QueryParams {
-            limit,
-            offset,
-        };
+        let q = QueryParams { limit, offset };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/pages"))
             .query(&q)?
             .header("Authorization", at)
@@ -149,7 +146,10 @@ impl super::Client {
     }
 
     /// Creates a new page in your Domo instance.
-    pub async fn post_page(&self, page: Page) -> Result<Page, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn post_page(
+        &self,
+        page: Page,
+    ) -> Result<Page, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/pages"))
             .header("Authorization", at)
@@ -181,7 +181,11 @@ impl super::Client {
     /// Also, collections cannot be added or removed via this endpoint, only reordered.
     /// Giving access to a user or group will also cause that user or group to have access to the parent page (if the page is a subpage).
     /// Moving a page by updating the parentId will also cause everyone with access to the page to have access to the new parent page.
-    pub async fn put_page(&self, id: u64, page: Page) -> Result<Page, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn put_page(
+        &self,
+        id: u64,
+        page: Page,
+    ) -> Result<Page, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/pages/", id))
             .header("Authorization", at)
@@ -208,7 +212,10 @@ impl super::Client {
         Ok(response.body_json().await?)
     }
 
-    pub async fn get_page_collections(&self, id: u64) -> Result<Vec<Collection>, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn get_page_collections(
+        &self,
+        id: u64,
+    ) -> Result<Vec<Collection>, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("dashboard").await?;
         let mut response = surf::get(&format!(
             "{}{}{}{}",

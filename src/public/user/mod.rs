@@ -109,10 +109,7 @@ impl super::Client {
             pub limit: Option<u32>,
             pub offset: Option<u32>,
         }
-        let q = QueryParams {
-            limit,
-            offset,
-        };
+        let q = QueryParams { limit, offset };
         let mut response = surf::get(&format!("{}{}", self.host, "/v1/users"))
             .query(&q)?
             .header("Authorization", at)
@@ -144,7 +141,10 @@ impl super::Client {
     /// Creates a new user in your Domo instance.
     ///
     /// TODO param sendInvite=true
-    pub async fn post_user(&self, user: User) -> Result<User, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn post_user(
+        &self,
+        user: User,
+    ) -> Result<User, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::post(&format!("{}{}", self.host, "/v1/users"))
             .header("Authorization", at)
@@ -174,7 +174,11 @@ impl super::Client {
 
     /// Updates the specified user by providing values to parameters passed. Any parameter left out of the request will cause the specific user’s attribute to remain unchanged
     /// Currently all user fields are required
-    pub async fn put_user(&self, id: &str, user: User) -> Result<User, Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn put_user(
+        &self,
+        id: &str,
+        user: User,
+    ) -> Result<User, Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::put(&format!("{}{}{}", self.host, "/v1/users/", id))
             .header("Authorization", at)
@@ -189,7 +193,10 @@ impl super::Client {
 
     /// Permanently deletes a user from your Domo instance
     /// This is destructive and cannot be reversed.
-    pub async fn delete_user(&self, id: &str) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    pub async fn delete_user(
+        &self,
+        id: &str,
+    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let at = self.get_access_token("user").await?;
         let mut response = surf::delete(&format!("{}{}{}", self.host, "/v1/users/", id))
             .header("Authorization", at)
