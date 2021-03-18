@@ -64,7 +64,7 @@ We recommend using environment variables or other config that is not in your rep
 
 Use methods on the provided client
 
-   let r = domo.list_datasets(limit, offset).await.unwrap();
+  let r = domo.list_datasets(limit, offset).await.unwrap();
 	
 
 Domo CLI
@@ -88,6 +88,12 @@ You can use the env flag DOMO_EDITOR to override which editor is used:
 
 Updates
 ===
+
+2021-03-17 Version 0.3.2
+---
+
+* Updated libraries to latest
+* Cleaned up clippy lint suggestions
 
 2021-01-31 Version 0.3.1
 ---
